@@ -35,18 +35,50 @@ class ConsistentHashTable:
             
 # -----------IGNOREBEYOND: test code ---------------
 import random
+import unittest
+def random_3letters():
+    return (chr(ord('A') + random.randint(0,25)) +
+            chr(ord('A') + random.randint(0,25)) +
+            chr(ord('A') + random.randint(0,25)))
+class NumberParseTestCase(unittest.TestCase):
+    """Test parsing & formatting of US phone numbers"""
+
+    def setUp(self):
+        self.c1 = ConsistentHashTable(('A', 'B', 'C'))
+        num_nodes = random.randint(20,50)
+        self.nodeset = set()
+        while len(self.nodeset) < num_nodes:
+            node = random_3letters()
+            self.nodeset.add(node)
+        self.c2 = ConsistentHashTable(self.nodeset)
+        
+    def testSmallExact(self):
+        self.assertEqual(self.c1.find_nodes('splurg', 2), ['A', 'B'])
+        self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A',)), ['B', 'C'])
+        self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A','B')), ['C'])
+        self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A','B','C')), [])
+
+    def testLarge(self):
+        x = self.c2.find_nodes('splurg', 15)
+        self.assertEqual(len(x), 15)
+
+    def testDistribution(self):
+        """Generate a lot of hash values and see how even the distribution is"""
+        nodecount = dict([(node, 0) for node in self.nodeset])
+        for _ in range(1000):
+            node = self.c2.find_nodes(random_3letters(), 1)[0]
+            nodecount[node] = nodecount[node] + 1
+        average_count = 1000/len(self.nodeset)
+        average_percent = 100*average_count / 1000
+        print "Expect average node to get %d of the 1000 hash values, %0.1f%% of total" % (average_count, average_percent)
+        overfull_count = 0
+        for node, count in nodecount.items():
+            percent_allocated = 100*count/1000
+            if percent_allocated > 2 * average_percent:
+                overfull_count = overfull_count + 1
+                print "  %s %0.0f%%" % (node, 100*count/1000)
+        print ("%d nodes (of %d, so %0.0f%%) had more than twice the expected average" % 
+               (overfull_count, len(self.nodeset), 100*overfull_count/len(self.nodeset)))
+            
 if __name__ == "__main__":
-    c1 = ConsistentHashTable(('A', 'B', 'C'))
-    print c1.find_nodes('splurg', 2)
-    print c1.find_nodes('splurg', 2, avoid=set(('A', )))
-    print c1.find_nodes('splurg', 2, avoid=set(('A', 'B')))
-    print c1.find_nodes('splurg', 2, avoid=set(('A', 'B',  'C')))
-    num_nodes = random.randint(10,100)
-    nodeset = set()
-    while len(nodeset) < num_nodes:
-        node = (chr(ord('A') + random.randint(0,25)) +
-                chr(ord('A') + random.randint(0,25)) +
-                chr(ord('A') + random.randint(0,25)))
-        nodeset.add(node)
-    c2 = ConsistentHashTable(nodeset)
-    print c2.find_nodes('splurg', 15)
+    unittest.main()
