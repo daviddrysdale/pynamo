@@ -60,6 +60,13 @@ class HashMultipleTestCase(unittest.TestCase):
         self.c2 = ConsistentHashTable(self.nodeset, 10)
         
     def testSmallExact(self):
+        self.assertEqual(str(self.c1), 
+                         "(0ec9e6875e4c6e6702e1b81813a0b70d, B),"
+                         "(1aa81a7562b705fb6779655b8e407ee3, A),"
+                         "(1d1eeea52e95de7227efa6e226563cd2, C),"
+                         "(2af91581036572478db2b2c90479c73f, B),"
+                         "(57e1e221c0a1aa811bc8d4d8dd6deaa7, A),"
+                         "(8b872364fb86c3da3f942c6346f01195, C)")
         self.assertEqual(self.c1.find_nodes('splurg', 2), ['A', 'C'])
         self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A',)), ['C', 'B'])
         self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A','B')), ['C'])
@@ -107,7 +114,7 @@ class HashMultipleTestCase(unittest.TestCase):
                        (node, transfer_count[node], total_transfers , 100*transfer_count[node]/ total_transfers))
 
 if __name__ == "__main__":
-    for ii in range(1, len(sys.argv)-1):
+    for ii in range(1, len(sys.argv)-1): # pragma: no cover
         arg = sys.argv[ii]
         if arg == "-s" or arg == "--seed":
             random.seed(sys.argv[ii+1])

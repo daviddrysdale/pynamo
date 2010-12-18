@@ -5,11 +5,12 @@ test:
 
 COVERAGE_FILES=$(wildcard *.py)
 coverage: 
-	python-coverage -e
+	python-coverage erase
 	@list='$(COVERAGE_FILES)'; for pyfile in $$list; do \
-	  python-coverage -c $$pyfile; \
+	  python-coverage run -p $$pyfile; \
 	done
-	python-coverage -m -r $(COVERAGE_FILES)
+	python-coverage combine
+	python-coverage report -m $(COVERAGE_FILES)
 
 slap:
 	slap *.py
@@ -17,3 +18,4 @@ slap:
 clean: 
 	find . -name \*.pyc | xargs rm -f
 	find . -name \*,cover | xargs rm -f
+	find . -name .coverage | xargs rm -f

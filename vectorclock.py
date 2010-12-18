@@ -70,9 +70,11 @@ class VectorClockTestCase(unittest.TestCase):
 
     def testEquality(self):
         self.assertEquals(self.c1==self.c2, False)
+        self.assertEquals(self.c1!=self.c2, True)
         self.c1.add('B',2)
         self.c2.add('A',1)
         self.assertEquals(self.c1==self.c2, True)
+        self.assertEquals(self.c1!=self.c2, False)
 
     def testOrder(self):
         self.assertEquals(self.c1 < self.c2, False)

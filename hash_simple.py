@@ -56,6 +56,7 @@ class HashSimpleTestCase(unittest.TestCase):
         self.c2 = ConsistentHashTable(self.nodeset)
         
     def testSmallExact(self):
+        self.assertEqual(str(self.c1), "(0d61f8370cad1d412f80b84d143e1257, C),(7fc56270e7a70fa81a5935b72eacbe29, A),(9d5ed678fe57bcca610140957afab571, B)")
         self.assertEqual(self.c1.find_nodes('splurg', 2), ['A', 'B'])
         self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A',)), ['B', 'C'])
         self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A','B')), ['C'])
@@ -104,7 +105,7 @@ class HashSimpleTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    for ii in range(1, len(sys.argv)-1):
+    for ii in range(1, len(sys.argv)-1): # pragma: no cover
         arg = sys.argv[ii]
         if arg == "-s" or arg == "--seed":
             random.seed(sys.argv[ii+1])
