@@ -47,8 +47,8 @@ def random_3letters():
     return (chr(ord('A') + random.randint(0,25)) +
             chr(ord('A') + random.randint(0,25)) +
             chr(ord('A') + random.randint(0,25)))
-class NumberParseTestCase(unittest.TestCase):
-    """Test parsing & formatting of US phone numbers"""
+class HashMultipleTestCase(unittest.TestCase):
+    """Test consistent hash utility that uses multiple virtual nodes"""
 
     def setUp(self):
         self.c1 = ConsistentHashTable(('A', 'B', 'C'), 2)
