@@ -34,6 +34,7 @@ class ConsistentHashTable:
         return ",".join(["(%s, %s)" % (binascii.hexlify(nodeinfo[0]), nodeinfo[1]) for nodeinfo in self.nodelist])
             
 # -----------IGNOREBEYOND: test code ---------------
+import sys
 import random
 import unittest
 
@@ -103,4 +104,10 @@ class NumberParseTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    for ii in range(1, len(sys.argv)-1):
+        arg = sys.argv[ii]
+        if arg == "-s" or arg == "--seed":
+            random.seed(sys.argv[ii+1])
+            del sys.argv[ii:ii+2]
+            break
     unittest.main()
