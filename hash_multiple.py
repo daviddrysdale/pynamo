@@ -5,9 +5,14 @@ import binascii
 import bisect
 
 class ConsistentHashTable:
-    def __init__(self, nodelist):
+    def __init__(self, nodelist, repeat):
         """Initialize a consistent hash table for the given list of nodes"""
-        baselist = [(hashlib.md5(str(node)).digest(), node) for node in nodelist]
+        # Insert each node into the hash circle multiple times
+        baselist = []
+        for node in nodelist:
+            for ii in range(repeat):
+                nodestring = str(node) + (":%d" % ii) 
+                baselist.append((hashlib.md5(nodestring).digest(), node))
         # Build two lists: one of (hashvalue, node) pairs, sorted by hashvalue
         # One of just the hashvalues, to allow use of bisect.
         self.nodelist = sorted(baselist, key=lambda x:x[0])
@@ -22,8 +27,9 @@ class ConsistentHashTable:
         results = []
         while len(results) < count:
             if next_index == len(self.nodelist): next_index = 0
-            if self.nodelist[next_index][1] not in avoid:
-                results.append(self.nodelist[next_index][1])
+            node = self.nodelist[next_index][1]
+            if node not in avoid and node not in results:
+                results.append(node)
             next_index = next_index + 1
             if next_index == initial_index:
                 # Gone all the way around -- terminate loop regardless
@@ -36,27 +42,25 @@ class ConsistentHashTable:
 # -----------IGNOREBEYOND: test code ---------------
 import random
 import unittest
-
 def random_3letters():
     return (chr(ord('A') + random.randint(0,25)) +
             chr(ord('A') + random.randint(0,25)) +
             chr(ord('A') + random.randint(0,25)))
-
 class NumberParseTestCase(unittest.TestCase):
     """Test parsing & formatting of US phone numbers"""
 
     def setUp(self):
-        self.c1 = ConsistentHashTable(('A', 'B', 'C'))
+        self.c1 = ConsistentHashTable(('A', 'B', 'C'), 2)
         num_nodes = random.randint(20,50)
         self.nodeset = set()
         while len(self.nodeset) < num_nodes:
             node = random_3letters()
             self.nodeset.add(node)
-        self.c2 = ConsistentHashTable(self.nodeset)
+        self.c2 = ConsistentHashTable(self.nodeset, 10)
         
     def testSmallExact(self):
-        self.assertEqual(self.c1.find_nodes('splurg', 2), ['A', 'B'])
-        self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A',)), ['B', 'C'])
+        self.assertEqual(self.c1.find_nodes('splurg', 2), ['A', 'C'])
+        self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A',)), ['C', 'B'])
         self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A','B')), ['C'])
         self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A','B','C')), [])
 
@@ -100,7 +104,6 @@ class NumberParseTestCase(unittest.TestCase):
             if transfer_count[node] > 0:
                 print ("Node %s gets %d of %d (%0.0f%%) transfers" % 
                        (node, transfer_count[node], total_transfers , 100*transfer_count[node]/ total_transfers))
-
 
 if __name__ == "__main__":
     unittest.main()
