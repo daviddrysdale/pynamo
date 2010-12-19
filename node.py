@@ -37,7 +37,7 @@ class Node:
         # Keep track of node object <-> node name
         Node.node[self.name] = self
         Node.name[self] = self.name
-        _logger.info("Create node %s", self)
+        _logger.debug("Create node %s", self)
         History.add('add', NodeAction(self))
 
     def __str__(self):

@@ -7,34 +7,9 @@ import logconfig
 from node import Node
 from framework import Framework
 from hash_multiple import ConsistentHashTable
-from message import Message
+from dynamomessages import *
 _logger = logging.getLogger('dynamo')
 
-class DynamoMessage(Message):
-    def __init__(self, from_node, to_node, key, value, metadata):
-        Message.__init__(self, from_node, to_node)
-        self.key = key
-        self.value = value
-        self.metadata = metadata
-    def __str__(self):
-        return "%s %s=%s" % (Message.__str__(self), self.key, self.value)
-
-class DynamoResponse(DynamoMessage):
-    def __init__(self, req):
-        DynamoMessage.__init__(self, req.to_node, req.from_node, req.key, req.value, req.metadata)
-
-class PutFwd(DynamoMessage):
-    def __str__(self):
-        return "%s PutFwd(%s=%s)" % (Message.__str__(self), self.key, self.value)
-
-class PutReq(DynamoMessage):
-    def __str__(self):
-        return "%s PutReq(%s=%s)" % (Message.__str__(self), self.key, self.value)
-
-class PutRsp(DynamoResponse):
-    def __str__(self):
-        return "%s PutRsp(%s=%s)" % (Message.__str__(self), self.key, self.value)
-        
 class DynamoNode(Node):
     T = 10 # Number of "tokens"/"virtual nodes"/"repeats" in consistent hash table
     N = 3 # Number of nodes to replicate at
@@ -45,7 +20,9 @@ class DynamoNode(Node):
     def __init__(self):
         Node.__init__(self)
         self.store = {} # key => (value, metadata)
-        # Rebuild the consistent hash table
+        self.pending_put = {} # (key, sequence) => set of nodes that have stored
+        self.pending_get = {} # key => set of (node, value, metadata) tuples
+        # Rebuild the consistent hash table 
         DynamoNode.chash = ConsistentHashTable(Node.name.keys(), DynamoNode.T)
 
     def put(self, key, value, metadata):
@@ -58,31 +35,81 @@ class DynamoNode(Node):
             Framework.send_message(putmsg)
         else:
             # Store locally
+            seqno = self.generate_sequence_number()
+            _logger.info("%s, %d: store %s=%s", self, seqno, key, value)
+            metadata = seqno # @@@ replace with vector clock
             self.store[key] = (value, metadata)
+            self.pending_put[(key, seqno)] = set([self])
+            reqcount = 1
             for node in nodelist:
                 if node != self:
+                    # Send message to get other node in preference list to store
                     putmsg = PutReq(self, node, key, value, metadata)
                     Framework.send_message(putmsg)
+                    reqcount = reqcount + 1
+                if reqcount >= DynamoNode.N:
+                    # nodelist may have more than N entries to allow for failures
+                    break
             
+    def get(self, key):
+        nodelist = DynamoNode.chash.find_nodes(key, DynamoNode.N)
+        self.pending_get[key] = set()
+        reqcount = 0
+        for node in nodelist:
+            getmsg = GetReq(self, node, key)
+            Framework.send_message(getmsg)
+            reqcount = reqcount + 1
+            if reqcount >= DynamoNode.N:
+                # nodelist may have more than N entries to allow for failures
+                break
+            
+        
 
     def rcvmsg(self, msg):
         if isinstance(msg, PutFwd):
             self.put(msg.key, msg.value, msg.metadata)
+
         elif isinstance(msg, PutReq):
+            _logger.info("%s: store %s=%s", self, msg.key, msg.value)
             self.store[msg.key] = (msg.value, msg.metadata)
             putrsp = PutRsp(msg)
             Framework.send_message(putrsp)
+
         elif isinstance(msg, PutRsp):
-            pass
+            seqno = msg.metadata # replace with vector clock
+            if (msg.key, seqno) in self.pending_put:
+                self.pending_put[(msg.key, seqno)].add(msg.from_node)
+                if len(self.pending_put[(msg.key, seqno)]) >= DynamoNode.W:
+                    _logger.info("%s: written %d copies of %s=%s so done", self, DynamoNode.W, msg.key, msg.value)
+                    _logger.debug("  copies at %s", [node.name for node in self.pending_put[(msg.key, seqno)]])
+                    del self.pending_put[(msg.key, seqno)]
+
+        elif isinstance(msg, GetReq):
+            _logger.info("%s: retrieve %s=?", self, msg.key)
+            if msg.key in self.store:
+                (value, metadata) = self.store[msg.key]
+                getrsp = GetRsp(msg, value, metadata)
+                Framework.send_message(getrsp)
+            
+        elif isinstance(msg, GetRsp):
+            if msg.key in self.pending_get:
+                self.pending_get[msg.key].add((msg.from_node, msg.value, msg.metadata))
+                if len(self.pending_get[msg.key]) >= DynamoNode.R:
+                    _logger.info("%s: read %d copies of %s=? so done", self, DynamoNode.R, msg.key)
+                    _logger.debug("  copies at %s", [(node.name,value) for (node,value,_) in self.pending_get[msg.key]])
+                    del self.pending_get[msg.key]
+
         else: 
             raise TypeError("Unexpected message type %s", msg.__class__)
-            
+        
             
 
 a = DynamoNode()
 for _ in range(49):
     DynamoNode()
 a.put('A', 1, None)
+Framework.schedule()
+a.get('A')
 Framework.schedule()
 from history import History
 print History.ladder()
