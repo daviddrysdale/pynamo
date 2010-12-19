@@ -16,6 +16,4 @@ slap:
 	slap *.py
 
 clean: 
-	find . -name \*.pyc | xargs rm -f
-	find . -name \*,cover | xargs rm -f
-	find . -name .coverage | xargs rm -f
+	rm -f *.pyc *,cover .coverage dynamo.log
