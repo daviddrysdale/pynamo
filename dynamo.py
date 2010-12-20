@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """Implementation of Dynamo"""
 import sys
+import random
 import logging
 
 import logconfig
@@ -15,7 +16,8 @@ class DynamoNode(Node):
     N = 3 # Number of nodes to replicate at
     W = 2 # Number of nodes that need to reply to a write operation
     R = 2 # Number of nodes that need to reply to a read operation
-    chash = ConsistentHashTable((), T)
+    nodelist = []
+    chash = ConsistentHashTable(nodelist, T)
 
     def __init__(self):
         Node.__init__(self)
@@ -23,7 +25,8 @@ class DynamoNode(Node):
         self.pending_put = {} # (key, sequence) => set of nodes that have stored
         self.pending_get = {} # key => set of (node, value, metadata) tuples
         # Rebuild the consistent hash table 
-        DynamoNode.chash = ConsistentHashTable(Node.name.keys(), DynamoNode.T)
+        DynamoNode.nodelist.append(self)
+        DynamoNode.chash = ConsistentHashTable(DynamoNode.nodelist, DynamoNode.T)
 
     def put(self, key, value, metadata):
         nodelist = DynamoNode.chash.find_nodes(key, DynamoNode.N)
@@ -63,8 +66,6 @@ class DynamoNode(Node):
                 # nodelist may have more than N entries to allow for failures
                 break
             
-        
-
     def rcvmsg(self, msg):
         if isinstance(msg, PutFwd):
             self.put(msg.key, msg.value, msg.metadata)
@@ -84,6 +85,9 @@ class DynamoNode(Node):
                     _logger.debug("  copies at %s", [node.name for node in self.pending_put[(msg.key, seqno)]])
                     del self.pending_put[(msg.key, seqno)]
 
+        elif isinstance(msg, GetFwd):
+            self.get(msg.key)
+
         elif isinstance(msg, GetReq):
             _logger.info("%s: retrieve %s=?", self, msg.key)
             if msg.key in self.store:
@@ -102,11 +106,27 @@ class DynamoNode(Node):
         else: 
             raise TypeError("Unexpected message type %s", msg.__class__)
         
-            
 
-a = DynamoNode()
-for _ in range(49):
+class DynamoClientNode(Node):
+    def __init__(self, name):
+        Node.__init__(self, name)
+    def put(self, key, value, metadata, destnode=None):
+        if destnode is None:
+            # Pick a random node to send the request to
+            destnode = random.choice(DynamoNode.nodelist)
+        putmsg = PutFwd(self, destnode, key, value, metadata)
+        Framework.send_message(putmsg)
+    def get(self, key, destnode=None):
+        if destnode is None:
+            # Pick a random node to send the request to
+            destnode = random.choice(DynamoNode.nodelist)
+        putmsg = GetFwd(self, destnode, key)
+        Framework.send_message(putmsg)
+    
+
+for _ in range(50):
     DynamoNode()
+a = DynamoClientNode('a')
 a.put('A', 1, None)
 Framework.schedule()
 a.get('A')

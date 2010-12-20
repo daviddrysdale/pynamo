@@ -29,8 +29,11 @@ class Node:
         cls.count = cls.count + 1
         return name
 
-    def __init__(self):
-        self.name = Node.next_name()
+    def __init__(self, name=None):
+        if name is None:
+            self.name = Node.next_name()
+        else:
+            self.name = name
         self.next_sequence_number = 0
         self.included = True # Whether this node is included in lists of nodes
         self.failed = False # Indicates current failure
