@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+import re
+import fileinput
+try:
+    from pygments import highlight
+    from pygments.lexers import PythonLexer
+    from pygments.formatters import HtmlFormatter
+    GOT_PYGMENTS = True
+except Exception:
+    GOT_PYGMENTS = False
+
+RE_INCLUDE = re.compile(r'^\s*#include \<(?P<filename>.*)\>\s*$')
+RE_IGNORE = re.compile(r'IGNOREBEYOND')
+
+def htmlize(line):
+    return line
+for line in fileinput.input():
+    m = RE_INCLUDE.match(line)
+    if m:
+        incfile = file(m.group('filename'), 'r')
+        inclines = []
+        for incline in incfile:
+            if RE_IGNORE.search(incline):
+                break
+            inclines.append(incline.rstrip())
+        pycode = '\n'.join(inclines)
+        if GOT_PYGMENTS:
+            print highlight(pycode, PythonLexer(), HtmlFormatter())
+        else:
+            # Default to raw printout
+            print "<blockquote><table cellpadding=5 bgcolor=lightblue><tr><td><pre>"
+            print pycode
+            print "</pre></td></tr></table></blockquote>"
+    else:
+        print line,
+    
