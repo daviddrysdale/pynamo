@@ -14,14 +14,20 @@ class ConsistentHashTable:
         self.hashlist = [hashnode[0] for hashnode in self.nodelist]
 
     def find_nodes(self, key, count=1, avoid=None):
-        """Return a list of count nodes from the hash table that are consecutively after the hash of the given key"""
+        """Return a list of nodes whose hashes are consecutively after the hash of the given key.
+
+        Returned list size is count, and any nodes in the avoid collection are not included."""
+        if avoid is None: # Use an empty set
+            avoid = set() 
+        # Hash the key 
         hv = hashlib.md5(str(key)).digest()
-        if avoid is None: avoid = set() # Use an empty set
+        # Find the node after this hash value
         initial_index = bisect.bisect(self.hashlist, hv)
         next_index = initial_index
         results = []
         while len(results) < count:
-            if next_index == len(self.nodelist): next_index = 0
+            if next_index == len(self.nodelist): # Wrap round to the start
+                next_index = 0
             if self.nodelist[next_index][1] not in avoid:
                 results.append(self.nodelist[next_index][1])
             next_index = next_index + 1
@@ -48,7 +54,7 @@ class HashSimpleTestCase(unittest.TestCase):
 
     def setUp(self):
         self.c1 = ConsistentHashTable(('A', 'B', 'C'))
-        num_nodes = random.randint(20,50)
+        num_nodes = random.randint(30,60)
         self.nodeset = set()
         while len(self.nodeset) < num_nodes:
             node = random_3letters()
@@ -69,20 +75,22 @@ class HashSimpleTestCase(unittest.TestCase):
     def testDistribution(self):
         """Generate a lot of hash values and see how even the distribution is"""
         nodecount = dict([(node, 0) for node in self.nodeset])
-        for _ in range(1000):
+        numhashes = 10000
+        for _ in range(numhashes):
             node = self.c2.find_nodes(random_3letters(), 1)[0]
             nodecount[node] = nodecount[node] + 1
-        average_count = 1000/len(self.nodeset)
-        average_percent = 100*average_count / 1000
-        print "Expect average node to get %d of the 1000 hash values, %0.1f%% of total" % (average_count, average_percent)
+        average_count = numhashes/len(self.nodeset)
+        average_percent = 100*average_count / numhashes
         overfull_count = 0
         for node, count in nodecount.items():
-            percent_allocated = 100*count/1000
+            percent_allocated = 100*count/numhashes
             if percent_allocated > 1.5 * average_percent:
                 overfull_count = overfull_count + 1
-                print "  %s %0.0f%%" % (node, 100*count/1000)
-        print ("%d nodes (of %d, so %0.0f%%) had more than 50%% over the expected average" % 
-               (overfull_count, len(self.nodeset), 100*overfull_count/len(self.nodeset)))
+        print ("For %d random hash keys assigned to %d nodes, "
+               "%d of the nodes (%0.0f%%) had more than "
+               "50%% more keys assigned to them than the expected average." %
+               (numhashes, len(self.nodeset), overfull_count, 100*overfull_count/len(self.nodeset)))
+
             
     def testFailover(self):
         """For a given unavailable node, see what other nodes get new traffic"""

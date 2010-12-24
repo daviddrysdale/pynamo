@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import re
 import fileinput
+import subprocess
 try:
     from pygments import highlight
     from pygments.lexers import PythonLexer
@@ -10,14 +11,14 @@ except Exception:
     GOT_PYGMENTS = False
 
 RE_INCLUDE = re.compile(r'^\s*#include \<(?P<filename>.*)\>\s*$')
+RE_RESULT = re.compile(r'^\s*#result \<(?P<command>.*)\>\s*$')
 RE_IGNORE = re.compile(r'IGNOREBEYOND')
 
-def htmlize(line):
-    return line
 for line in fileinput.input():
-    m = RE_INCLUDE.match(line)
-    if m:
-        incfile = file(m.group('filename'), 'r')
+    m_inc = RE_INCLUDE.match(line)
+    m_res = RE_RESULT.match(line)
+    if m_inc:
+        incfile = file(m_inc.group('filename'), 'r')
         inclines = []
         for incline in incfile:
             if RE_IGNORE.search(incline):
@@ -31,6 +32,13 @@ for line in fileinput.input():
             print "<blockquote><table cellpadding=5 bgcolor=lightblue><tr><td><pre>"
             print pycode
             print "</pre></td></tr></table></blockquote>"
+    elif m_res:
+        cmd = m_res.group('command')
+        p = subprocess.Popen(cmd.split(),
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        p_stdout, p_stderr = p.communicate()
+        print p_stdout
     else:
         print line,
     
