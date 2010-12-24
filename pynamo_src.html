@@ -51,14 +51,31 @@ The first implementation just implements the straightforward one-hash-per-node a
 The paper indicates a couple of problems with this simplistic approach, which we can check by feeding in some
 random data:
 <ul>
-  <li>The distribution of hash values can be 'lumpy': 
+  <li><b>The distribution of hash values can be 'lumpy'</b>: 
    #result <python hash_simple.py -s 1 HashSimpleTestCase.testDistribution>
   </li>
-  <li>All of the traffic failed node moves to a single other node:</li>
+  <li><b>All of the traffic of a failed node moves to a single other node</b>:
+    Adding a node to the <code>avoid</code> parameter means that the (single) next node round the 
+    hash ring gets all of the keys that would have gone to the failed node.
+  </li>
 </ul>
 </p>
-
-
+<p>
+So we move to the second implementation, where each node gets multiple points in the hash ring, known
+as <i>virtual nodes</i>.  We implement this very simply, by adding a ":<i>&lt;count&gt;</i>" suffix to the
+string that we hash for the node position.
+</p>
+#include <hash_multiple.py>
+<p>
+Let's see how much different this makes by feeding in some random data to a set of 50 nodes with 10 copies of
+each node in the hash ring.
+<ul>
+  <li><b>Distribution of hash values</b>: 
+   #result <python hash_multiple.py -s 1 HashMultipleTestCase.testDistribution>
+  </li>
+  <li><b>Distribution of traffic from a failed node</b>:
+  </li>
+</ul>
 
 <a name="framework"><h2>Appendix: Node Simulation Framework</h2></a>
 

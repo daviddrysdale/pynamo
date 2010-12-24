@@ -44,17 +44,14 @@ import sys
 import random
 import unittest
 
-def random_3letters():
-    return (chr(ord('A') + random.randint(0,25)) +
-            chr(ord('A') + random.randint(0,25)) +
-            chr(ord('A') + random.randint(0,25)))
+from testutils import random_3letters, Stats
 
 class HashSimpleTestCase(unittest.TestCase):
     """Test simple consistent hashing class"""
 
     def setUp(self):
         self.c1 = ConsistentHashTable(('A', 'B', 'C'))
-        num_nodes = random.randint(30,60)
+        num_nodes = 50
         self.nodeset = set()
         while len(self.nodeset) < num_nodes:
             node = random_3letters()
@@ -81,17 +78,14 @@ class HashSimpleTestCase(unittest.TestCase):
             nodecount[node] = nodecount[node] + 1
         average_count = numhashes/len(self.nodeset)
         average_percent = 100*average_count / numhashes
-        overfull_count = 0
+        stats = Stats()
         for node, count in nodecount.items():
-            percent_allocated = 100*count/numhashes
-            if percent_allocated > 1.5 * average_percent:
-                overfull_count = overfull_count + 1
-        print ("For %d random hash keys assigned to %d nodes, "
-               "%d of the nodes (%0.0f%%) had more than "
-               "50%% more keys assigned to them than the expected average." %
-               (numhashes, len(self.nodeset), overfull_count, 100*overfull_count/len(self.nodeset)))
+            stats.add(count)
+        print ("%d random hash keys assigned to %d nodes "
+               "are distributed across the nodes "
+               "with a standard deviation of %0.2f." %
+               (numhashes, len(self.nodeset), stats.stddev()))
 
-            
     def testFailover(self):
         """For a given unavailable node, see what other nodes get new traffic"""
         test_node = None
