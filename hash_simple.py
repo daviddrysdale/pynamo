@@ -76,8 +76,6 @@ class HashSimpleTestCase(unittest.TestCase):
         for _ in range(numhashes):
             node = self.c2.find_nodes(random_3letters(), 1)[0]
             nodecount[node] = nodecount[node] + 1
-        average_count = numhashes/len(self.nodeset)
-        average_percent = 100*average_count / numhashes
         stats = Stats()
         for node, count in nodecount.items():
             stats.add(count)

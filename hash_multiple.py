@@ -47,6 +47,7 @@ import random
 import unittest
 from testutils import random_3letters, Stats
 
+NODE_REPEAT = 10
 class HashMultipleTestCase(unittest.TestCase):
     """Test consistent hash utility that uses multiple virtual nodes"""
 
@@ -57,7 +58,7 @@ class HashMultipleTestCase(unittest.TestCase):
         while len(self.nodeset) < num_nodes:
             node = random_3letters()
             self.nodeset.add(node)
-        self.c2 = ConsistentHashTable(self.nodeset, 10)
+        self.c2 = ConsistentHashTable(self.nodeset, NODE_REPEAT)
         
     def testSmallExact(self):
         self.assertEqual(str(self.c1), 
@@ -79,44 +80,52 @@ class HashMultipleTestCase(unittest.TestCase):
     def testDistribution(self):
         """Generate a lot of hash values and see how even the distribution is"""
         nodecount = dict([(node, 0) for node in self.nodeset])
-        numhashes = 10000
-        for _ in range(numhashes):
+        numkeys = 10000
+        for _ in range(numkeys):
             node = self.c2.find_nodes(random_3letters(), 1)[0]
             nodecount[node] = nodecount[node] + 1
-        average_count = numhashes/len(self.nodeset)
-        average_percent = 100*average_count / numhashes
         stats = Stats()
         for node, count in nodecount.items():
             stats.add(count)
         print ("%d random hash keys assigned to %d nodes "
                "are distributed across the nodes "
                "with a standard deviation of %0.2f." %
-               (numhashes, len(self.nodeset), stats.stddev()))
+               (numkeys, len(self.nodeset), stats.stddev()))
 
     def testFailover(self):
         """For a given unavailable node, see what other nodes get new traffic"""
-        test_node = None
-        transfer_count = dict([(node, 0) for node in self.nodeset])
-        total_transfers = 0
-        for _ in range(1000):
+        transfer = {}
+        for from_node in self.nodeset:
+            transfer[from_node] = {}
+            for to_node in self.nodeset:
+                transfer[from_node][to_node] = 0
+        numkeys = 10000
+        for _ in range(numkeys):
             key = random_3letters()
             node_pair = self.c2.find_nodes(key, 2)
-            if test_node is None: test_node = node_pair[0]
-            if node_pair[0] == test_node:
-                next_node = node_pair[1]
-                transfer_count[next_node] = transfer_count[next_node] + 1
-                total_transfers = total_transfers + 1
+            transfer[node_pair[0]][node_pair[1]] = transfer[node_pair[0]][node_pair[1]] + 1
+        stats = Stats()
+        for from_node in self.nodeset:
+            num_dest_nodes = 0
+            for to_node in self.nodeset:
+                if transfer[from_node][to_node] > 0:
+                    num_dest_nodes = num_dest_nodes + 1
+            stats.add(num_dest_nodes)
+        print ("On failure of a single node, %.1f other nodes (on average) "
+               "handle the transferred traffic from that node." %
+               stats.mean())
 
-        for node in self.nodeset:
-            if transfer_count[node] > 0:
-                print ("Node %s gets %d of %d (%0.0f%%) transfers" % 
-                       (node, transfer_count[node], total_transfers , 100*transfer_count[node]/ total_transfers))
 
 if __name__ == "__main__":
-    for ii in range(1, len(sys.argv)-1): # pragma: no cover
+    ii = 1
+    while ii < len(sys.argv):
         arg = sys.argv[ii]
         if arg == "-s" or arg == "--seed":
             random.seed(sys.argv[ii+1])
             del sys.argv[ii:ii+2]
-            break
+        elif arg == "-r" or arg == "--repeat":
+            NODE_REPEAT = int(sys.argv[ii+1])
+            del sys.argv[ii:ii+2]
+        else:
+            ii = ii + 1
     unittest.main()

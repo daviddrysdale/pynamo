@@ -74,6 +74,16 @@ each node in the hash ring.
    #result <python hash_multiple.py -s 1 HashMultipleTestCase.testDistribution>
   </li>
   <li><b>Distribution of traffic from a failed node</b>:
+    #result <python hash_multiple.py -s 1 HashMultipleTestCase.testFailover>
+  </li>
+</ul>
+For 50 nodes with <b>100</b> copies of each node in the hash ring.
+<ul>
+  <li><b>Distribution of hash values</b>: 
+   #result <python hash_multiple.py -s 1 -r 100 HashMultipleTestCase.testDistribution>
+  </li>
+  <li><b>Distribution of traffic from a failed node</b>:
+    #result <python hash_multiple.py -s 1 -r 100 HashMultipleTestCase.testFailover>
   </li>
 </ul>
 
