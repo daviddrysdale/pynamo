@@ -95,14 +95,53 @@ and whose values are the last-seen sequence number for that node.
 </p>
 #include <vectorclock.py:1>
 <p>
-
-
-
-
-@@@ partial ordering
+We can add entries to the vector clock, simulating different nodes and their counters, with one proviso: a
+node's counter isn't allowed to go backwards.
+</p>
+#python
+from vectorclock import VectorClock
+v = VectorClock()
+print v
+v.update('A', 1)
+print v
+v.update('A', 3)
+print v
+v.update('B', 1001)
+print v
+v.update('B', 1002)
+print v
+v.update('B', 1)
+#endpython
+<p>
+We can also define an ordering operation <b>&lt;</b> on vector clocks
+(together with all the other comparison operations).
 </p>
 #include <vectorclock.py:2>
 <p>
+This is a <a href="http://en.wikipedia.org/wiki/Partially_ordered_set">partial order</a>:
+<ul>
+  <li>it's reflexive: <code>a &lt;= a</code> always holds (because <code>a==a</code>)</li>
+  <li>it's antisymmetric: if <code>a &lt; b</code> and <code>b &lt; a</code>, then <code>a==b</code></li>
+  <li>it's transitive: if <code>a &lt; b</code> and <code>b &lt; c</code>, then <code>a &lt;= c</code></li>
+</ul>
+but it's not a total order &ndash; it's possible for neither <code>a &lt; b</code>
+nor <code>b &lt; a</code> to hold.
+</p>
+#python
+from vectorclock import VectorClock
+v1 = VectorClock()
+v1.update('A', 1).update('B', 2)
+v2 = VectorClock()
+v2.update('A', 2).update('B', 3)
+v1 < v2
+v3 = VectorClock()
+v3.update('X', 1).update('Y', 2)
+v1 < v3
+v3 < v1
+#endpython
+<p>
+This partial order forms the basis for the more important things we can do with vector clocks.
+
 @@@ combination
 </p>
 #include <vectorclock.py:3>

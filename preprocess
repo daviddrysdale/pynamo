@@ -12,6 +12,8 @@ except Exception:
 
 RE_INCLUDE = re.compile(r'^\s*#include \<(?P<filename>[^:]*)(:(?P<partno>\d+))?\>\s*$')
 RE_RESULT = re.compile(r'^\s*#result \<(?P<command>.*)\>\s*$')
+RE_PYTHON = re.compile(r'^\s*#python\s*$')
+RE_ENDPYTHON = re.compile(r'^\s*#endpython\s*$')
 RE_IGNORE = re.compile(r'IGNOREBEYOND')
 RE_PARTMARK = re.compile(r'^\s*#\s*PART\s*(?P<partno>\d+)\s*$')
 
@@ -38,11 +40,32 @@ def read_pyfile(filename, part=None):
         end_line = _part[filename][int(part)]
         return _cache[filename][start_line:end_line]
 
-
+interactive = False
+python_lines = []
 for line in fileinput.input():
     m_inc = RE_INCLUDE.match(line)
     m_res = RE_RESULT.match(line)
-    if m_inc:
+    m_start = RE_PYTHON.match(line)
+    m_end = RE_ENDPYTHON.match(line)
+    if interactive:
+        if m_end:
+            interactive = False
+            print "<blockquote><table cellpadding=5 bgcolor=lightblue><tr><td><pre>"
+            proc = subprocess.Popen("python",
+                                    stdin=subprocess.PIPE,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT)
+            for pline in python_lines:
+                print ">>> %s" % pline
+                proc.stdin.write(pline)
+            print proc.communicate()[0]
+            print "</pre></td></tr></table></blockquote>"
+        else:
+            python_lines.append(line)
+    elif m_start:
+        interactive = True
+        python_lines = []
+    elif m_inc:
         inclines = read_pyfile(m_inc.group('filename'), m_inc.group('partno'))
         pycode = '\n'.join(inclines)
         if GOT_PYGMENTS:
@@ -54,10 +77,10 @@ for line in fileinput.input():
             print "</pre></td></tr></table></blockquote>"
     elif m_res:
         cmd = m_res.group('command')
-        p = subprocess.Popen(cmd.split(),
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-        p_stdout, p_stderr = p.communicate()
+        proc = subprocess.Popen(cmd.split(),
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        p_stdout, p_stderr = proc.communicate()
         print p_stdout
     else:
         print line,
