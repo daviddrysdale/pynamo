@@ -114,7 +114,8 @@ v.update('B', 1)
 #endpython
 <p>
 We can also define an ordering operation <b>&lt;</b> on vector clocks
-(together with all the other comparison operations).
+(together with all the other comparison operations) by adding the relevant rich comparison methods 
+to the <code>VectorClock</code> class.
 </p>
 #include <vectorclock.py:2>
 <p>
@@ -129,15 +130,12 @@ nor <code>b &lt; a</code> to hold.
 </p>
 #python
 from vectorclock import VectorClock
-v1 = VectorClock()
-v1.update('A', 1).update('B', 2)
-v2 = VectorClock()
-v2.update('A', 2).update('B', 3)
-v1 < v2
-v3 = VectorClock()
-v3.update('X', 1).update('Y', 2)
-v1 < v3
-v3 < v1
+v1 = VectorClock().update('A', 1).update('B', 2)
+v2 = VectorClock().update('A', 2).update('B', 3)
+print (v1 < v2)
+v3 = VectorClock().update('X', 1).update('Y', 2)
+print (v1 < v3)
+print (v3 < v1)
 #endpython
 <p>
 This partial order forms the basis for the more important things we can do with vector clocks.

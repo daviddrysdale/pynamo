@@ -1,7 +1,9 @@
 #!/usr/bin/env python
+import sys
 import re
 import fileinput
 import subprocess
+import traceback
 try:
     from pygments import highlight
     from pygments.lexers import PythonLexer
@@ -16,6 +18,8 @@ RE_PYTHON = re.compile(r'^\s*#python\s*$')
 RE_ENDPYTHON = re.compile(r'^\s*#endpython\s*$')
 RE_IGNORE = re.compile(r'IGNOREBEYOND')
 RE_PARTMARK = re.compile(r'^\s*#\s*PART\s*(?P<partno>\d+)\s*$')
+HTML_PRE_START='<div class="highlight"><pre>'
+HTML_PRE_END='</pre></div>'
 
 _cache = {} # filename => [line1, line2, ...]
 _part = {} # filename => [part1_endline, part2_endline, ..]
@@ -50,16 +54,18 @@ for line in fileinput.input():
     if interactive:
         if m_end:
             interactive = False
-            print "<blockquote><table cellpadding=5 bgcolor=lightblue><tr><td><pre>"
-            proc = subprocess.Popen("python",
-                                    stdin=subprocess.PIPE,
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.STDOUT)
+            print HTML_PRE_START
             for pline in python_lines:
-                print ">>> %s" % pline
-                proc.stdin.write(pline)
-            print proc.communicate()[0]
-            print "</pre></td></tr></table></blockquote>"
+                print ">>> <b>%s</b>" % pline.rstrip()
+                try:
+                    exec pline.rstrip()
+                except Exception:
+                    print "Traceback (most recent call last):"
+                    tb = traceback.extract_tb(sys.exc_traceback)
+                    for eline in traceback.format_list(tb)[1:]:
+                        print eline,
+                    print "Exception: %s" % sys.exc_value
+            print HTML_PRE_END
         else:
             python_lines.append(line)
     elif m_start:
@@ -72,9 +78,9 @@ for line in fileinput.input():
             print highlight(pycode, PythonLexer(), HtmlFormatter())
         else:
             # Default to raw printout
-            print "<blockquote><table cellpadding=5 bgcolor=lightblue><tr><td><pre>"
+            print HTML_PRE_START
             print pycode
-            print "</pre></td></tr></table></blockquote>"
+            print HTML_PRE_END
     elif m_res:
         cmd = m_res.group('command')
         proc = subprocess.Popen(cmd.split(),
