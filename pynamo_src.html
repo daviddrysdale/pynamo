@@ -90,9 +90,15 @@ For 50 nodes with <b>100</b> copies of each node in the hash ring.
 
 <a name="consistent_hash"><h2>Section 4.4: Vector Clocks</h2></a>
 <p>
+A vector clock is easy to implement; it's basically a dictionary whose keys are nodes
+and whose values are the last-seen sequence number for that node.
 </p>
 #include <vectorclock.py:1>
 <p>
+
+
+
+
 @@@ partial ordering
 </p>
 #include <vectorclock.py:2>
