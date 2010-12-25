@@ -10,20 +10,40 @@ try:
 except Exception:
     GOT_PYGMENTS = False
 
-RE_INCLUDE = re.compile(r'^\s*#include \<(?P<filename>.*)\>\s*$')
+RE_INCLUDE = re.compile(r'^\s*#include \<(?P<filename>[^:]*)(:(?P<partno>\d+))?\>\s*$')
 RE_RESULT = re.compile(r'^\s*#result \<(?P<command>.*)\>\s*$')
 RE_IGNORE = re.compile(r'IGNOREBEYOND')
+RE_PARTMARK = re.compile(r'^\s*#\s*PART\s*(?P<partno>\d+)\s*$')
+
+_cache = {} # filename => [line1, line2, ...]
+_part = {} # filename => [part1_endline, part2_endline, ..]
+def read_pyfile(filename, part=None):
+    if filename not in _cache:
+        _part[filename] = [0]
+        incfile = file(filename, 'r')
+        inclines = []
+        for incline in incfile:
+            if RE_IGNORE.search(incline):
+                break
+            if RE_PARTMARK.match(incline):
+                _part[filename].append(len(inclines))
+            else:
+                inclines.append(incline.rstrip())
+        _part[filename].append(len(inclines))
+        _cache[filename] = inclines
+    if part is None:
+        return _cache[filename]
+    else:
+        start_line = _part[filename][int(part)-1]
+        end_line = _part[filename][int(part)]
+        return _cache[filename][start_line:end_line]
+
 
 for line in fileinput.input():
     m_inc = RE_INCLUDE.match(line)
     m_res = RE_RESULT.match(line)
     if m_inc:
-        incfile = file(m_inc.group('filename'), 'r')
-        inclines = []
-        for incline in incfile:
-            if RE_IGNORE.search(incline):
-                break
-            inclines.append(incline.rstrip())
+        inclines = read_pyfile(m_inc.group('filename'), m_inc.group('partno'))
         pycode = '\n'.join(inclines)
         if GOT_PYGMENTS:
             print highlight(pycode, PythonLexer(), HtmlFormatter())

@@ -2,52 +2,39 @@
 """Vector clock class"""
 class VectorClock:
     def __init__(self):
-        self.clock = {}
+        self.clock = {} # node => counter
     
     def update(self, node, counter):
+        """Add a new node:counter value to a VectorClock."""
         if node in self.clock and counter <= self.clock[node]:
             raise Exception("Node %s has gone backwards from %d to %d" % 
                             (node, self.clock[node], counter))
         self.clock[node] = counter
 
     def __str__(self):
-        result = "{"
-        need_comma = False
-        for node in sorted(self.clock.keys()):
-            if need_comma: result = result + ","
-            result = result + "%s:%d" % (node, self.clock[node])
-            need_comma = True
-        return result + "}"
-
-    # Comparison operations. Vector clocks are partially ordered:
-    #   reflexive: a<=a (because a==a)
-    #   anti-symmetric: a<=b and b<=a => a==b
-    #   transitive: a<=b and b<=c => a<=c
-    # Vector clocks are not totally ordered -- it can be that neither a<=b nor b<=a holds
+        return "{%s}" % ",".join(["%s:%d" % (node, self.clock[node]) 
+                                  for node in sorted(self.clock.keys())])
+# PART 2
+    # Comparison operations. Vector clocks are partially ordered, but not totally ordered.
     def __eq__(self, other):
         return self.clock == other.clock
-    def __ne__(self, other):
-        return not (self==other)
     def __lt__(self, other):
         for node in self.clock:
             if node not in other.clock: return False
             if self.clock[node] > other.clock[node]: return False
         return True
+    def __ne__(self, other):
+        return not (self==other)
     def __le__(self, other):
-        lt = self < other
-        if lt is NotImplemented: return NotImplemented
-        if lt: return True
-        return (self==other)
+        return (self==other) or (self < other)
     def __gt__(self, other):
-        return other<self
+        return (other<self)
     def __ge__(self, other):
-        gt = self > other
-        if gt is NotImplemented: return NotImplemented
-        if gt: return True
-        return (self==other)
-
+        return (self==other) or (self > other)
+# PART 3
     @classmethod
     def coalesce(cls, vcs):
+        """Coalesce a container of VectorClock objects."""
         result = []
         for vc in vcs:
             # See if this vector-clock is subsumed by anything already present

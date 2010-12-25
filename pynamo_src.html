@@ -36,7 +36,7 @@ Dynamo paper.  It's a perfectly clear and readable paper, so there's no gain in 
 the rare cases where some important details have been swept under the carper.
 </p>
 
-<a name="4_2_hash"><h2>Section 4.2: Partitioning Algorithm</h2></a>
+<a name="consistent_hash"><h2>Section 4.2/4.3: Partitioning Algorithm</h2></a>
 <p>
 The first area to explore is the consistent hashing algorithm described in section 4.2 of the paper.
 The constructor for the <code>ConsistentHashTable</code> builds up the list of nodes, and the 
@@ -86,6 +86,22 @@ For 50 nodes with <b>100</b> copies of each node in the hash ring.
     #result <python hash_multiple.py -s 1 -r 100 HashMultipleTestCase.testFailover>
   </li>
 </ul>
+
+
+<a name="consistent_hash"><h2>Section 4.4: Vector Clocks</h2></a>
+<p>
+</p>
+#include <vectorclock.py:1>
+<p>
+@@@ partial ordering
+</p>
+#include <vectorclock.py:2>
+<p>
+@@@ combination
+</p>
+#include <vectorclock.py:3>
+
+
 
 <a name="framework"><h2>Appendix: Node Simulation Framework</h2></a>
 
