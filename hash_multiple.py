@@ -89,8 +89,8 @@ class HashMultipleTestCase(unittest.TestCase):
             stats.add(count)
         print ("%d random hash keys assigned to %d nodes "
                "are distributed across the nodes "
-               "with a standard deviation of %0.2f." %
-               (numkeys, len(self.nodeset), stats.stddev()))
+               "with a standard deviation of %0.2f (compared to a mean of %d)." %
+               (numkeys, len(self.nodeset), stats.stddev(), numkeys/len(self.nodeset)))
 
     def testFailover(self):
         """For a given unavailable node, see what other nodes get new traffic"""
@@ -118,7 +118,7 @@ class HashMultipleTestCase(unittest.TestCase):
 
 if __name__ == "__main__":
     ii = 1
-    while ii < len(sys.argv):
+    while ii < len(sys.argv): # pragma: no cover
         arg = sys.argv[ii]
         if arg == "-s" or arg == "--seed":
             random.seed(sys.argv[ii+1])

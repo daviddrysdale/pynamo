@@ -72,8 +72,8 @@ class HashSimpleTestCase(unittest.TestCase):
     def testDistribution(self):
         """Generate a lot of hash values and see how even the distribution is"""
         nodecount = dict([(node, 0) for node in self.nodeset])
-        numhashes = 10000
-        for _ in range(numhashes):
+        numkeys = 10000
+        for _ in range(numkeys):
             node = self.c2.find_nodes(random_3letters(), 1)[0]
             nodecount[node] = nodecount[node] + 1
         stats = Stats()
@@ -81,8 +81,8 @@ class HashSimpleTestCase(unittest.TestCase):
             stats.add(count)
         print ("%d random hash keys assigned to %d nodes "
                "are distributed across the nodes "
-               "with a standard deviation of %0.2f." %
-               (numhashes, len(self.nodeset), stats.stddev()))
+               "with a standard deviation of %0.2f (compared to a mean of %d)." %
+               (numkeys, len(self.nodeset), stats.stddev(), numkeys/len(self.nodeset)))
 
     def testFailover(self):
         """For a given unavailable node, see what other nodes get new traffic"""
