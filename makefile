@@ -1,9 +1,9 @@
 # Ideally, want Pygments installed (sudo easy_install Pygments)
 
 # Python files that are included in the doc
-INCLUDED_PY_FILES=hash_simple.py hash_multiple.py vectorclock.py
+INCLUDED_PY_FILES=hash_simple.py hash_multiple.py vectorclock.py vectorclockt.py
 # Python files that run as tests
-TEST_FILES=hash_simple.py hash_multiple.py vectorclock.py
+TEST_FILES=hash_simple.py hash_multiple.py vectorclock.py vectorclockt.py
 # All files
 ALL_PY_FILES=$(wildcard *.py)
 ALL_FILES=makefile preprocess pynamo_src.html $(ALL_PY_FILES)

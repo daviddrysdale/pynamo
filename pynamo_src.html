@@ -168,6 +168,15 @@ print (v1 < converged_clock)
 print (v2 < converged_clock)
 print (v3 < converged_clock)
 #endpython
+<p>
+The Dynamo paper also discusses the problem that the size of vector clocks can become large as more and more
+nodes get involved in the history of changes to a particular key/value.  To get around this, they suggest
+keeping a timestamp along with the sequence number, and throwing away the oldest entry in a vector clock when
+it has more than 10 entries.  This is easily implemented as a subclass of <code>VectorClock</code>, but we
+won't bother using this variant from here on.
+</p>
+#include <vectorclockt.py>
+
 
 <a name="framework"><h2>Appendix: Node Simulation Framework</h2></a>
 
