@@ -2,7 +2,7 @@
 """Vector clock class"""
 import copy
 
-class VectorClock:
+class VectorClock(object):
     def __init__(self):
         self.clock = {} # node => counter
     
