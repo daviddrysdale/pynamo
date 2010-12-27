@@ -4,8 +4,8 @@ import sys
 import time
 from vectorclock import VectorClock
 
-NODE_LIMIT = 10
 class VectorClockTimestamp(VectorClock):
+    NODE_LIMIT = 10
     def __init__(self):
         VectorClock.__init__(self)
         self.clock_time = {} # node => timestamp
