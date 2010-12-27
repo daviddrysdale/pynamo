@@ -11,7 +11,7 @@
 <p>
 Like many other people, I found the 
 <a href="http://s3.amazonaws.com/AllThingsDistributed/sosp/amazon-dynamo-sosp2007.pdf">paper [PDF]</a> 
-that describes Amazon's Dynamo system intensely interesting.
+that describes Amazon's Dynamo system very interesting.
 </p>
 <p>
 To fully understand something software-related, I always find it's best to actually write some code.
@@ -35,6 +35,14 @@ For my final proviso, I should point out that I'm not going to explain much of t
 Dynamo paper.  It's a perfectly clear and readable paper, so there's no gain in re-explaining it, except for
 the rare cases where some important details have been swept under the carper.
 </p>
+
+<h3>Contents</h3>
+<ul>
+  <li><a href="#consistent_hash">Section 4.2/4.3: Partitioning Algorithm</a></li>
+  <li><a href="#vector_clock">Section 4.4: Vector Clocks</a></li>
+  <li><a href="#framework">Appendix: Node Simulation Framework</a></li>
+</ul>
+
 
 <a name="consistent_hash"><h2>Section 4.2/4.3: Partitioning Algorithm</h2></a>
 <p>
@@ -88,7 +96,7 @@ For 50 nodes with <b>100</b> copies of each node in the hash ring.
 </ul>
 
 
-<a name="consistent_hash"><h2>Section 4.4: Vector Clocks</h2></a>
+<a name="vector_clock"><h2>Section 4.4: Vector Clocks</h2></a>
 <p>
 A vector clock is easy to implement; it's basically a dictionary whose keys are nodes
 and whose values are the last-seen sequence number for that node.
