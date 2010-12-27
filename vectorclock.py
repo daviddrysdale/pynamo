@@ -61,7 +61,7 @@ class VectorClock:
     @classmethod
     def converge(cls, vcs):
         """Return a single VectorClock that subsumes all of the input VectorClocks"""
-        result = VectorClock()
+        result = cls()
         for vc in vcs:
             for node, counter in vc.clock.items():
                 if node in result.clock:
