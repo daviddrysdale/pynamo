@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 """Vector clock class"""
+import copy
+
 class VectorClock:
     def __init__(self):
         self.clock = {} # node => counter
@@ -35,21 +37,30 @@ class VectorClock:
 # PART 3
     @classmethod
     def coalesce(cls, vcs):
-        """Coalesce a container of VectorClock objects."""
+        """Coalesce a container of VectorClock objects.
+
+        The result is a list of VectorClocks; each input VectorClock is a direct
+        ancestor of one of the results, and no result entry is a direct ancestor
+        of any other result entry."""
         result = []
         for vc in vcs:
-            # See if this vector-clock is subsumed by anything already present
+            # See if this vector-clock subsumes or is subsumed by anything already present
             subsumed = False
-            for existing in result:
-                if vc < existing:
+            for ii in range(len(result)):
+                if vc <= result[ii]: # subsumed by existing answer
+                    subsumed = True
+                    break
+                if result[ii] < vc: # replace existing answer
+                    result[ii] = copy.deepcopy(vc)
                     subsumed = True
                     break
             if not subsumed:
-                result.append(vc)
+                result.append(copy.deepcopy(vc))
         return result
-
+# PART 4
     @classmethod
-    def combine(cls, vcs):
+    def converge(cls, vcs):
+        """Return a single VectorClock that subsumes all of the input VectorClocks"""
         result = VectorClock()
         for vc in vcs:
             for node, counter in vc.clock.items():
@@ -62,7 +73,6 @@ class VectorClock:
 
 # -----------IGNOREBEYOND: test code ---------------
 import unittest
-import copy
 
 class VectorClockTestCase(unittest.TestCase):
     """Test vector clock class"""
@@ -115,19 +125,21 @@ class VectorClockTestCase(unittest.TestCase):
         c4 = copy.deepcopy(self.c1)
         # Diverge the two clocks
         c3.update('X',200)
-        self.c1.update('Y',100)
-        self.assertEquals(VectorClock.coalesce((self.c1, c3, c4)), [self.c1, c3])
+        c4.update('Y',100)
+        # c1 < c3, c1 < c4
+        self.assertEquals(VectorClock.coalesce(((self.c1, c3, c4))), [c3, c4])
+        self.assertEquals(VectorClock.coalesce((c3, self.c1, c3, c4)), [c3, c4])
 
-    def testCombine(self):
+    def testConverge(self):
         self.c1.update('B', 1)
         c3 = copy.deepcopy(self.c1)
         c4 = copy.deepcopy(self.c1)
         # Diverge two of the clocks
         c3.update('X',200)
         self.c1.update('Y',100)
-        cx = VectorClock.combine((self.c1, self.c2, c3, c4))
+        cx = VectorClock.converge((self.c1, self.c2, c3, c4))
         self.assertEquals(str(cx), "{A:1,B:2,X:200,Y:100}")
-        cy = VectorClock.combine(VectorClock.coalesce((self.c1, self.c2, c3, c4)))
+        cy = VectorClock.converge(VectorClock.coalesce((self.c1, self.c2, c3, c4)))
         self.assertEquals(str(cy), "{A:1,B:2,X:200,Y:100}")
 
 

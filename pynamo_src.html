@@ -138,17 +138,47 @@ print (v1 < v3)
 print (v3 < v1)
 #endpython
 <p>
-This partial order forms the basis for the more important things we can do with vector clocks.
-
-@@@ combination
+This partial order forms the basis for the more important thing we can do with vector clocks &ndash; combine
+them.  
 </p>
 #include <vectorclock.py:3>
-
-
+<p>
+This operation folds together those vector clocks that are direct ancestors of each other, but keeping separate those
+that are not.
+</p>
+#python
+diverged_clocks = VectorClock.coalesce((v1, v2, v3))
+for vc in diverged_clocks: print vc
+print (diverged_clocks[0] < diverged_clocks[1])
+print (diverged_clocks[1] < diverged_clocks[0])
+#endpython
+<p>
+Finally, we need to be able to build a single vector clock that has an arbitrary set of direct ancestors; in
+other words, a way of reconverging a divergent set of vector clocks.
+</p>
+#include <vectorclock.py:4>
+<p>
+Code that uses Dynamo needs to be able to resolve inconsistencies itself.  When it has done so, the new value
+for the key needs a vector clock that makes it clear that the inconsistency has been resolved.
+</p>
+#python
+converged_clock = VectorClock.converge(diverged_clocks)
+print converged_clock
+print (v1 < converged_clock)
+print (v2 < converged_clock)
+print (v3 < converged_clock)
+#endpython
 
 <a name="framework"><h2>Appendix: Node Simulation Framework</h2></a>
 
-
+<ul>
+  <li>framework.py: </li>
+  <li>history.py: </li>
+  <li>timer.py: </li>
+  <li>testutils.py: </li>
+  <li>logconfig.py: </li>
+  <li>message.py: </li>
+</ul>
 <a name=""><h2>Epilog</h2></a>
 <p>
 A full copy of this project (text, source, scripts) can be 
