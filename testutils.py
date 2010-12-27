@@ -28,7 +28,7 @@ class Stats:
             for value in self.values:
                 diffval = (value-mean)
                 self._variance = self._variance + (diffval*diffval)
-            _variance = self._variance / float(len(self.values)-1)
+            self._variance = self._variance / float(len(self.values)-1)
         return self._variance
     def stddev(self):
         return math.sqrt(self.variance())
