@@ -17,6 +17,7 @@ RE_RESULT = re.compile(r'^\s*#result \<(?P<command>.*)\>\s*$')
 RE_PYTHON = re.compile(r'^\s*#python\s*$')
 RE_ENDPYTHON = re.compile(r'^\s*#endpython\s*$')
 RE_IGNORE = re.compile(r'IGNOREBEYOND')
+RE_SKIPLINE = re.compile(r'^\s*_logger.*$')
 RE_PARTMARK = re.compile(r'^\s*#\s*PART\s*(?P<partno>\d+)\s*$')
 HTML_PRE_START='<div class="highlight"><pre>'
 HTML_PRE_END='</pre></div>'
@@ -29,6 +30,8 @@ def read_pyfile(filename, part=None):
         incfile = file(filename, 'r')
         inclines = []
         for incline in incfile:
+            if RE_SKIPLINE.match(incline):
+                continue
             if RE_IGNORE.search(incline):
                 break
             if RE_PARTMARK.match(incline):

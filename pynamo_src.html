@@ -122,7 +122,8 @@ v.update('B', 1)
 #endpython
 <p>
 We can also define an ordering operation <b>&lt;</b> on vector clocks
-(together with all the other comparison operations) by adding the relevant rich comparison methods 
+(together with all the other comparison operations) by adding the relevant 
+<a href="http://www.python.org/dev/peps/pep-0207/">rich comparison</a> methods 
 to the <code>VectorClock</code> class.
 </p>
 #include <vectorclock.py:2>
@@ -133,7 +134,7 @@ This is a <a href="http://en.wikipedia.org/wiki/Partially_ordered_set">partial o
   <li>it's antisymmetric: if <code>a &lt; b</code> and <code>b &lt; a</code>, then <code>a==b</code></li>
   <li>it's transitive: if <code>a &lt; b</code> and <code>b &lt; c</code>, then <code>a &lt;= c</code></li>
 </ul>
-but it's not a total order &ndash; it's possible for neither <code>a &lt; b</code>
+but it's not a <a href="http://en.wikipedia.org/wiki/Total_order">total order</a> &ndash; it's possible for neither <code>a &lt; b</code>
 nor <code>b &lt; a</code> to hold.
 </p>
 #python
@@ -185,10 +186,56 @@ won't bother using this variant from here on.
 </p>
 #include <vectorclockt.py>
 
-
-
-
-
+<a name="client"><h2>Putting It Together</h2></a>
+<p>
+Now we're going to start to put everything together.  We're going to build on a simulated enviroment of 
+nodes and messages between them, which allows testing and simulation.  The framework is described in more detail in
+the <a href="#framework">appendix</a>, but hopefully the framework's methods are clear enough not too
+need much explanation.
+</p>
+<p>
+First up, let's simulate a client that wants to use the Dynamo system.  Equivalently to section 4.1 of the
+paper, it has two methods: <code>put(key, context, value)</code> and <code>get(key)</code>.
+The client is outside of the Dynamo system proper, so these methods are straightforward: build the appropriate
+message and send it to a random node in the Dynamo system (although this can be overridden with an explicit
+choice of node).
+</p>
+#include <dynamo.py:10>
+<p>
+These messages are sent to a <code>DynamoNode</code>, whose definition includes some data structures.  The
+class includes some constants controlling the amount of replication, including the <b>N</b>, <b>W</b>
+and <b>R</b> parameters described in section 4.5 of the paper.  The class also keeps track of how many
+<code>DynamoNode</code> instances there are, and keeps a 
+<a href="#consistent_hash">consistent hash table</a> that corresponds to those instances.
+</p>
+#include <dynamo.py:2>
+<p>
+Each instance of <code>DynamoNode</code> has some attributes of its own.  The <code>store</code> attribute is
+a Python dictionary that simulates the node's local data store; this is where the key/value pairs stored by
+the system end up.  There are also a <code>pending_put</code> and <code>pending_get</code> data structures
+that keep track of pending operations being coordinated by this node.
+</p>
+<p>
+So what happens when a client tries to <code>put()</code> a piece of data?  The initial request message will
+arrive at a random Dynamo node, and its first action is to figure out the <i>preference list</i>.  
+<ul>
+  <li>If the local node isn't in the preference list, it forwards the request on to a node that is in the list (specifically, the 
+    <i>coordinator</i> &ndash; the first node on the list).</li>
+  <li>If the local node is in the preference list, then it stores the key/value/context locally, and sends a 
+    <b>Put</b> message to N-1 other nodes to get them to store it too.<li>
+</ul>
+</p>
+#include <dynamo.py:3>
+<p>
+Continuing to follow the progress of a <code>put()</code> operation, the behaviour of the nodes that receive
+the <b>Put</b> messages is straightforward: they store the value, and send a response to say they've done it.
+</p>
+#include <dynamo.py:5>
+<p>
+In turn, the original sending node ticks off these responses from its list of pending responses, and when it
+has had <b>W</b> total replies (including itself), the <code>put()</code> operation is done.
+</p>
+#include <dynamo.py:6>
 
 
 
