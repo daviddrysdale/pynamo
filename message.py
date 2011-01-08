@@ -5,7 +5,7 @@ class Message:
         self.from_node = from_node
         self.to_node = to_node
     def __str__(self):
-        return "%s -> %s:" % (self.from_node, self.to_node)
+        return "%s->%s:" % (self.from_node, self.to_node)
 
 # Internal messages used to indicate events in the environment
 class NodeAction(Message):

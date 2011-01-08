@@ -1,5 +1,5 @@
 *.pyc
 .coverage
-pynamo.log
+dynamo.log
 pynamo.html
 pynamo.tgz
