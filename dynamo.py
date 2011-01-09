@@ -131,12 +131,13 @@ class DynamoClientNode(Node):
     def rcvmsg(self, msg):
         pass # @@@
 # PART 12
-for _ in range(50):
-    DynamoNode()
-a = DynamoClientNode('a')
-a.put('K1', None, 1)
-Framework.schedule()
-a.get('K1')
-Framework.schedule()
-from history import History
-print History.ladder()
+if __name__ == "__main__":
+    for _ in range(50):
+        DynamoNode()
+    a = DynamoClientNode('a')
+    a.put('K1', None, 1)
+    Framework.schedule()
+    a.get('K1')
+    Framework.schedule()
+    from history import History
+    print History.ladder()

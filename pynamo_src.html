@@ -186,7 +186,7 @@ won't bother using this variant from here on.
 </p>
 #include <vectorclockt.py>
 
-<a name="client"><h2>Putting It Together</h2></a>
+<a name="simple_put"><h2><code>Put</code>ting It Together</h2></a>
 <p>
 Now we're going to start to put everything together.  We're going to build on a simulated enviroment of 
 nodes and messages between them, which allows testing and simulation.  The framework is described in more detail in
@@ -222,7 +222,7 @@ arrive at a random Dynamo node, and its first action is to figure out the <i>pre
   <li>If the local node isn't in the preference list, it forwards the request on to a node that is in the list (specifically, the 
     <i>coordinator</i> &ndash; the first node on the list).</li>
   <li>If the local node is in the preference list, then it stores the key/value/context locally, and sends a 
-    <b>Put</b> message to N-1 other nodes to get them to store it too.<li>
+    <b>Put</b> message to N-1 other nodes to get them to store it too.</li>
 </ul>
 </p>
 #include <dynamo.py:3>
@@ -236,10 +236,20 @@ In turn, the original sending node ticks off these responses from its list of pe
 has had <b>W</b> total replies (including itself), the <code>put()</code> operation is done.
 </p>
 #include <dynamo.py:6>
+<p>
+We can see an example of the whole process as a ladder diagram. Notice that the response goes back to the
+client before the final <b>Put</b> response arrives &ndash; N is 3, so the Put request is processed by 3
+nodes, but W is only 2 and so the final response isn't needed for the process to complete.
+</p>
+<div class="highlight"><pre>
+#result <python test_put.py --seed 1>
+</pre></div>
 
 
+<a name="simple_get"><h2>Getting it Back</h2></a>
 
 
+<a name=""><h2>Coping With Failure</h2></a>
 
 
 <a name="framework"><h2>Appendix: Node Simulation Framework</h2></a>
