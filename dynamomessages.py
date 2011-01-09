@@ -28,27 +28,31 @@ class DynamoDataResponse(DynamoDataMessage):
     def __init__(self, req):
         DynamoDataMessage.__init__(self, req.to_node, req.from_node, req.key, req.value, req.metadata)
 
-class PutFwd(DynamoDataMessage):
+class ClientPut(DynamoDataMessage):
     def __str__(self):
-        return "%s PutFwd(%s=%s)" % (Message.__str__(self), self.key, self.value)
+        return "ClientPut(%s=%s)" % (self.key, self.value)
+
+class ClientPutRsp(DynamoDataResponse):
+    def __str__(self):
+        return "ClientPutRsp(%s=%s)" % (self.key, self.value)
 
 class PutReq(DynamoDataMessage):
     def __str__(self):
-        return "%s PutReq(%s=%s)" % (Message.__str__(self), self.key, self.value)
+        return "PutReq(%s=%s)" % (self.key, self.value)
 
 class PutRsp(DynamoDataResponse):
     def __str__(self):
-        return "%s PutRsp(%s=%s)" % (Message.__str__(self), self.key, self.value)
+        return "PutRsp(%s=%s)" % (self.key, self.value)
         
 
-class GetFwd(DynamoMessage):
+class ClientGet(DynamoMessage):
     def __str__(self):
-        return "%s GetFwd(%s=?)" % (Message.__str__(self), self.key)
+        return "ClientGet(%s=?)" % self.key
 
 class GetReq(DynamoMessage):
     def __str__(self):
-        return "%s GetReq(%s=?)" % (Message.__str__(self), self.key)
+        return "GetReq(%s=?)" % self.key
 
 class GetRsp(DynamoResponse):
     def __str__(self):
-        return "%s GetRsp(%s=%s)" % (Message.__str__(self), self.key, self.value)
+        return "GetRsp(%s=%s)" % (self.key, self.value)

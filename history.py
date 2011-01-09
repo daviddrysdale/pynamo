@@ -1,5 +1,6 @@
 """Code to track history of all activity"""
 
+import copy
 from bisect import bisect
 import logging
 
@@ -11,6 +12,7 @@ class History:
     
     Possible values for the action are:
       'send'    - message sent 
+      'forward' - message forwarded
       'drop'    - message dropped due to node down
       'cut'     - message dropped due to comms down
       'deliver' - message arrived
@@ -39,7 +41,7 @@ class History:
         """Return a list of all nodes involved in the history"""
         nodeset = set()
         for (action, msg) in cls.history:
-            if action == "send":
+            if action == "send" or action == "forward":
                 # Every message must be sent, so just look at send actions
                 nodeset.add(msg.from_node)
                 nodeset.add(msg.to_node)
@@ -88,23 +90,29 @@ class History:
             for vertcol in vertlines.values(): this_line[vertcol] = '|'
                 
             # Now look at this particular action
-            if action == "send":
+            if action == "send" or action == "forward":
+                if action == "forward":
+                    from_node = msg.intermediate_node
+                    start_marker = "+"
+                else:
+                    from_node = msg.from_node
+                    start_marker = "o"
                 # Pick a suitable spot for the vertical line for this message
                 vertcol = _pick_column(vertlines, column, 
-                                       column[msg.from_node], column[msg.to_node])
+                                       column[from_node], column[msg.to_node])
                 vertlines[msg] = vertcol
-                left2right = (column[msg.from_node] < vertcol)
+                left2right = (column[from_node] < vertcol)
                 
                 # Draw the horizontal line
                 _draw_horiz(this_line, 
-                            column[msg.from_node], 'o',
+                            column[from_node], start_marker,
                             vertcol, '+')
                 # Add the message text
                 msgtext = str(msg)
                 if left2right: #    o----+ Text
                     _write_text(this_line, vertcol+1, ' ' + msgtext)
                 elif len(msgtext) > vertcol: #  +---o Text
-                    _write_text(this_line, column[msg.from_node]+1, ' ' + msgtext)
+                    _write_text(this_line, column[from_node]+1, ' ' + msgtext)
                 else: # Text +---o
                     _write_text(this_line, vertcol - len(msgtext) - 1, msgtext + ' ')
                 

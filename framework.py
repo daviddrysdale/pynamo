@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+import copy
 import logging
 from collections import deque
 
@@ -37,6 +38,16 @@ class Framework:
         _logger.info("Enqueue %s->%s: %s", msg.from_node, msg.to_node, msg)
         cls.queue.append(msg)
         History.add("send", msg)
+
+    @classmethod
+    def forward_message(cls, msg, new_to_node):
+        """Forward a message"""
+        _logger.info("Enqueue(fwd) %s->%s: %s", msg.to_node, new_to_node, msg)
+        fwd_msg = copy.copy(msg)
+        fwd_msg.intermediate_node = fwd_msg.to_node
+        fwd_msg.to_node = new_to_node
+        cls.queue.append(fwd_msg)
+        History.add("forward", fwd_msg)
     
     @classmethod
     def schedule(cls, num_to_process=32768):
