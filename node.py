@@ -43,6 +43,9 @@ class Node:
         _logger.debug("Create node %s", self)
         History.add('add', NodeAction(self))
 
+    def get_contents(self):
+        return []
+
     def __str__(self):
         return self.name
 

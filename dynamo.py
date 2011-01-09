@@ -116,6 +116,12 @@ class DynamoNode(Node):
         elif isinstance(msg, GetRsp): self.rcv_getrsp(msg)
         else: raise TypeError("Unexpected message type %s", msg.__class__)
 # PART 10
+    def get_contents(self):
+        results = []
+        for key,value in self.store.items():
+            results.append("%s:%s" % (key,value[0]))
+        return results
+# PART 11
 class DynamoClientNode(Node):
     def put(self, key, metadata, value, destnode=None):
         if destnode is None: # Pick a random node to send the request to
@@ -127,10 +133,10 @@ class DynamoClientNode(Node):
             destnode = random.choice(DynamoNode.nodelist)
         putmsg = ClientGet(self, destnode, key)
         Framework.send_message(putmsg)
-# PART 11
+# PART 12
     def rcvmsg(self, msg):
         pass # @@@
-# PART 12
+# PART 13
 if __name__ == "__main__":
     for _ in range(50):
         DynamoNode()

@@ -166,13 +166,22 @@ class History:
             lines.append(''.join(this_line))
     
     
-        # Build a final epilogue pair of lines
+        # Build a final epilogue set of lines.  First, a header line
         lines.append(_header_line(nodelist, spacing))
-        this_line = [' ' for jj in xrange(linelen)]
-        for node, nodecol in column.items(): 
-            if 'value' in node.__dict__ and node.value is not None:
-                _write_center(this_line, nodecol, str(node.value))
-        lines.append(''.join(this_line))
+        # Now accumulate the contents information from the nodes
+        contents = {} # node -> list of contents
+        longest_conts = 0
+        for node in column.keys():
+            node_conts = node.get_contents()
+            contents[node] = node_conts
+            if len(node_conts) > longest_conts: longest_conts = len(node_conts)
+        # Now typeset it
+        for ii in range(longest_conts):
+            this_line = [' ' for jj in xrange(linelen)]
+            for node, nodecol in column.items(): 
+                if ii < len(contents[node]):
+                    _write_center(this_line, nodecol, str(contents[node][ii]))
+            lines.append(''.join(this_line))
         return '\n'.join(lines)
             
 def _header_line(nodelist, m):
