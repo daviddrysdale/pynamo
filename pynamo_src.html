@@ -200,7 +200,7 @@ The client is outside of the Dynamo system proper, so these methods are straight
 message and send it to a random node in the Dynamo system (although this can be overridden with an explicit
 choice of node).
 </p>
-#include <dynamo.py:10>
+#include <dynamo.py:11>
 <p>
 These messages are sent to a <code>DynamoNode</code>, whose definition includes some data structures.  The
 class includes some constants controlling the amount of replication, including the <b>N</b>, <b>W</b>
@@ -238,18 +238,58 @@ has had <b>W</b> total replies (including itself), the <code>put()</code> operat
 #include <dynamo.py:6>
 <p>
 We can see an example of the whole process as a ladder diagram. Notice that the response goes back to the
-client before the final <b>Put</b> response arrives &ndash; N is 3, so the Put request is processed by 3
-nodes, but W is only 2 and so the final response isn't needed for the process to complete.
+client before the final <b>Put</b> response arrives &ndash; the <b>N</b> parameter is 3, so the Put request is
+processed by 3 nodes, but the <b>W</b> parameter is only 2 and so the final response isn't needed for the
+process to complete.
 </p>
 <div class="highlight"><pre>
 #result <python test_put.py --seed 1>
 </pre></div>
 
 
+
+???? interspersed Puts...check the 
+
+??? move everything to unittest infrastructure, allow single entrypoint, move test code out of modules
+
+???
+
 <a name="simple_get"><h2>Getting it Back</h2></a>
+<p>
+After seeing the <b>Put</b> infrastructure, the <b>Get</b> infrastructure is pretty straightforward.  The main
+difference here is that whichever node first receives the client request coordinates the whole business,
+whether or not it itself is on the preference list for the key.
+</p>
+<p>
+So a client get request arrives at a node, which fans it out to <b>N</b> nodes on the preference list.
+</p>
+#include <dynamo.py:4>
+<p>
+Each of those nodes simply retrieves the relevant information from its local data store and sends it back.
+</p>
+#include <dynamo.py:7>
+<p>
+Finally, when enough (i.e. <b>R</b>) responses arrive, the first Dynamo node sends a confirmation response
+back to the client.
+#include <dynamo.py:8>
+<p>
+The whole process looks like the following:
+</p>
+<div class="highlight"><pre>
+#result <python test_get.py --seed 1>
+</pre></div>
 
 
 <a name=""><h2>Coping With Failure</h2></a>
+
+??? node failure
+
+
+??? link failure
+
+??? multiple node failure
+??? timeouts
+
 
 
 <a name="framework"><h2>Appendix: Node Simulation Framework</h2></a>

@@ -49,6 +49,10 @@ class ClientGet(DynamoMessage):
     def __str__(self):
         return "ClientGet(%s=?)" % self.key
 
+class ClientGetRsp(DynamoResponse):
+    def __str__(self):
+        return "ClientGetRsp(%s=%s)" % (self.key, self.value)
+
 class GetReq(DynamoMessage):
     def __str__(self):
         return "GetReq(%s=?)" % self.key

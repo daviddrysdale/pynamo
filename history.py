@@ -50,7 +50,7 @@ class History:
         return nodelist
 
     @classmethod
-    def ladder(cls, spacing=20, verbose_timers=False):
+    def ladder(cls, spacing=20, verbose_timers=False, start_line=0):
         """Generate the ladder diagram for a message history"""
         # First spin through all of the message history to find the set of Nodes involved
         nodelist = cls.nodelist()
@@ -73,10 +73,11 @@ class History:
         vertlines = {} # Current vertical lines, msg=>column
         failed_nodes = set()
         lines = [_header_line(nodelist, spacing)]
-        first_line = True
+        lineno = 0
     
         # Step through all of the actions
         for action, msg in cls.history:
+            lineno = lineno + 1
             # First, build up a line with the current set of vertical lines and leaders
             this_line = [' ' for jj in xrange(linelen)]
             for node, nodecol in column.items(): 
@@ -163,7 +164,8 @@ class History:
                 continue # don't emit a line
     
             # Put the array of characters together into a line, and add that to the list
-            lines.append(''.join(this_line))
+            if lineno > start_line:
+                lines.append(''.join(this_line))
     
     
         # Build a final epilogue set of lines.  First, a header line

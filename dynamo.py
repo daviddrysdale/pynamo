@@ -24,7 +24,8 @@ class DynamoNode(Node):
         self.store = {} # key => (value, metadata)
         self.pending_put = {} # (key, sequence) => set of nodes that have stored
         self.pending_put_msg = {} # (key, sequence) => original client message
-        self.pending_get = {} # key => set of (node, value, metadata) tuples
+        self.pending_get = {} # (key, sequence) => set of (node, value, metadata) tuples
+        self.pending_get_msg = {} # (key, sequence) => original client message
         # Rebuild the consistent hash table 
         DynamoNode.nodelist.append(self)
         DynamoNode.chash = ConsistentHashTable(DynamoNode.nodelist, DynamoNode.T)
@@ -58,12 +59,14 @@ class DynamoNode(Node):
                     # preference_list may have more than N entries to allow for failed nodes
                     break
 # PART 4
-    def get(self, key):
-        preference_list = DynamoNode.chash.find_nodes(key, DynamoNode.N)
-        self.pending_get[key] = set()
+    def rcv_clientget(self, msg):
+        preference_list = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N)
+        seqno = self.generate_sequence_number()
+        self.pending_get[(msg.key, seqno)] = set()
+        self.pending_get_msg[(msg.key, seqno)] = msg
         reqcount = 0
         for node in preference_list:
-            getmsg = GetReq(self, node, key)
+            getmsg = GetReq(self, node, msg.key)
             Framework.send_message(getmsg)
             reqcount = reqcount + 1
             if reqcount >= DynamoNode.N:
@@ -100,18 +103,25 @@ class DynamoNode(Node):
             Framework.send_message(getrsp)
 # PART 8
     def rcv_getrsp(self, getrsp):
-        if getrsp.key in self.pending_get:
-            self.pending_get[getrsp.key].add((getrsp.from_node, getrsp.value, getrsp.metadata))
-            if len(self.pending_get[getrsp.key]) >= DynamoNode.R:
+        seqno = getrsp.metadata # replace with vector clock
+        if (getrsp.key, seqno) in self.pending_get:
+            self.pending_get[(getrsp.key, seqno)].add((getrsp.from_node, getrsp.value, getrsp.metadata))
+            if len(self.pending_get[(getrsp.key, seqno)]) >= DynamoNode.R:
                 _logger.info("%s: read %d copies of %s=? so done", self, DynamoNode.R, getrsp.key)
-                _logger.debug("  copies at %s", [(node.name,value) for (node,value,_) in self.pending_get[getrsp.key]])
-                del self.pending_get[getrsp.key]
+                _logger.debug("  copies at %s", [(node.name,value) for (node,value,_) in self.pending_get[(getrsp.key, seqno)]])
+                original_msg = self.pending_get_msg[(getrsp.key, seqno)]
+                del self.pending_get[(getrsp.key, seqno)]
+                del self.pending_get_msg[(getrsp.key, seqno)]
+                # Reply to the original client
+                # @@@@ combine value, metadata info
+                client_getrsp = ClientGetRsp(original_msg, getrsp.value, getrsp.metadata)
+                Framework.send_message(client_getrsp)
 # PART 9
     def rcvmsg(self, msg):
         if isinstance(msg, ClientPut): self.rcv_clientput(msg)
         elif isinstance(msg, PutReq): self.rcv_put(msg)
         elif isinstance(msg, PutRsp): self.rcv_putrsp(msg)
-        elif isinstance(msg, ClientGet): self.get(msg.key)
+        elif isinstance(msg, ClientGet): self.rcv_clientget(msg)
         elif isinstance(msg, GetReq): self.rcv_get(msg)
         elif isinstance(msg, GetRsp): self.rcv_getrsp(msg)
         else: raise TypeError("Unexpected message type %s", msg.__class__)
