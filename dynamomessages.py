@@ -49,9 +49,12 @@ class ClientGet(DynamoMessage):
     def __str__(self):
         return "ClientGet(%s=?)" % self.key
 
-class ClientGetRsp(DynamoResponse):
+class ClientGetRsp(DynamoMessage):
+    def __init__(self, req, vms):
+        DynamoMessage.__init__(self, req.to_node, req.from_node, req.key)
+        self.vms = vms
     def __str__(self):
-        return "ClientGetRsp(%s=%s)" % (self.key, self.value)
+        return "ClientGetRsp(%s=%s)" % (self.key, [v for v,_ in self.vms])
 
 class GetReq(DynamoMessage):
     def __str__(self):

@@ -110,11 +110,13 @@ class DynamoNode(Node):
                 _logger.info("%s: read %d copies of %s=? so done", self, DynamoNode.R, getrsp.key)
                 _logger.debug("  copies at %s", [(node.name,value) for (node,value,_) in self.pending_get[(getrsp.key, seqno)]])
                 original_msg = self.pending_get_msg[(getrsp.key, seqno)]
+                results = []
+                for (node, value, metadata) in self.pending_get[(getrsp.key, seqno)]:
+                    results.append((value, metadata))
                 del self.pending_get[(getrsp.key, seqno)]
                 del self.pending_get_msg[(getrsp.key, seqno)]
-                # Reply to the original client
-                # @@@@ combine value, metadata info
-                client_getrsp = ClientGetRsp(original_msg, getrsp.value, getrsp.metadata)
+                # Reply to the original client, including all received values
+                client_getrsp = ClientGetRsp(original_msg, results)
                 Framework.send_message(client_getrsp)
 # PART 9
     def rcvmsg(self, msg):
@@ -145,15 +147,4 @@ class DynamoClientNode(Node):
         Framework.send_message(putmsg)
 # PART 12
     def rcvmsg(self, msg):
-        pass # @@@
-# PART 13
-if __name__ == "__main__":
-    for _ in range(50):
-        DynamoNode()
-    a = DynamoClientNode('a')
-    a.put('K1', None, 1)
-    Framework.schedule()
-    a.get('K1')
-    Framework.schedule()
-    from history import History
-    print History.ladder()
+        pass # Client does nothing with results

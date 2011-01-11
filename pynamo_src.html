@@ -270,7 +270,8 @@ Each of those nodes simply retrieves the relevant information from its local dat
 #include <dynamo.py:7>
 <p>
 Finally, when enough (i.e. <b>R</b>) responses arrive, the first Dynamo node sends a confirmation response
-back to the client.
+back to the client.  This part has a slight complication &ndash; the results aren't necessarily all the same,
+so we return the whole set.
 #include <dynamo.py:8>
 <p>
 The whole process looks like the following:
