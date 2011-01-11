@@ -109,6 +109,7 @@ class DynamoNode(Node):
             if len(self.pending_get[seqno]) >= DynamoNode.R:
                 _logger.info("%s: read %d copies of %s=? so done", self, DynamoNode.R, getrsp.key)
                 _logger.debug("  copies at %s", [(node.name,value) for (node,value,_) in self.pending_get[seqno]])
+                # Build up all the distinct values/metadata values for the response to the original request
                 original_msg = self.pending_get_msg[seqno]
                 results = set()
                 for (node, value, metadata) in self.pending_get[seqno]:

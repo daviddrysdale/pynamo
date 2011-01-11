@@ -271,7 +271,7 @@ Each of those nodes simply retrieves the relevant information from its local dat
 <p>
 Finally, when enough (i.e. <b>R</b>) responses arrive, the first Dynamo node sends a confirmation response
 back to the client.  This part has a slight complication &ndash; the results aren't necessarily all the same,
-so we return the whole set.
+so we return the whole set (folding duplicates).
 #include <dynamo.py:8>
 <p>
 The whole process looks like the following:
