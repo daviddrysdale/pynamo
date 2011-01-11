@@ -43,7 +43,7 @@ class DynamoNode(Node):
             # distinguish multiple requests for the same key
             seqno = self.generate_sequence_number()
             _logger.info("%s, %d: store %s=%s", self, seqno, msg.key, msg.value)
-            metadata = seqno # Override client metadata; this will be replaced with a vector clock later
+            metadata = (self.name, seqno) # Override client metadata; this will be replaced with a vector clock later
             self.store[msg.key] = (msg.value, metadata)
             # Send out to other nodes, and keep track of who has replied
             self.pending_put[(msg.key, seqno)] = set([self])
@@ -80,7 +80,7 @@ class DynamoNode(Node):
         Framework.send_message(putrsp)
 # PART 6
     def rcv_putrsp(self, putrsp):
-        seqno = putrsp.metadata # replace with vector clock
+        (nodename, seqno) = putrsp.metadata # replace with vector clock
         if (putrsp.key, seqno) in self.pending_put:
             self.pending_put[(putrsp.key, seqno)].add(putrsp.from_node)
             if len(self.pending_put[(putrsp.key, seqno)]) >= DynamoNode.W:
@@ -103,16 +103,16 @@ class DynamoNode(Node):
             Framework.send_message(getrsp)
 # PART 8
     def rcv_getrsp(self, getrsp):
-        seqno = getrsp.metadata # replace with vector clock
+        (nodename, seqno) = getrsp.metadata # replace with vector clock
         if (getrsp.key, seqno) in self.pending_get:
             self.pending_get[(getrsp.key, seqno)].add((getrsp.from_node, getrsp.value, getrsp.metadata))
             if len(self.pending_get[(getrsp.key, seqno)]) >= DynamoNode.R:
                 _logger.info("%s: read %d copies of %s=? so done", self, DynamoNode.R, getrsp.key)
                 _logger.debug("  copies at %s", [(node.name,value) for (node,value,_) in self.pending_get[(getrsp.key, seqno)]])
                 original_msg = self.pending_get_msg[(getrsp.key, seqno)]
-                results = []
+                results = set()
                 for (node, value, metadata) in self.pending_get[(getrsp.key, seqno)]:
-                    results.append((value, metadata))
+                    results.add((value, metadata))
                 del self.pending_get[(getrsp.key, seqno)]
                 del self.pending_get_msg[(getrsp.key, seqno)]
                 # Reply to the original client, including all received values
