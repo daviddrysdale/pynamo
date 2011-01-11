@@ -1,9 +1,10 @@
 
 class Message:
     """Base type for messages between Nodes"""
-    def __init__(self, from_node, to_node):
+    def __init__(self, from_node, to_node, msg_id=None):
         self.from_node = from_node
         self.to_node = to_node
+        self.msg_id = msg_id
     def __str__(self):
         return "%s->%s:" % (self.from_node, self.to_node)
 

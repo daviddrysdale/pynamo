@@ -43,7 +43,7 @@ class DynamoNode(Node):
             # distinguish multiple requests for the same key
             seqno = self.generate_sequence_number()
             _logger.info("%s, %d: store %s=%s", self, seqno, msg.key, msg.value)
-            metadata = (self.name, seqno) # Override client metadata; this will be replaced with a vector clock later
+            metadata = (self.name, seqno) # For now, metadata is just sequence number at coordinator
             self.store[msg.key] = (msg.value, metadata)
             # Send out to other nodes, and keep track of who has replied
             self.pending_put[(msg.key, seqno)] = set([self])
@@ -52,7 +52,7 @@ class DynamoNode(Node):
             for node in preference_list:
                 if node != self:
                     # Send message to get other node in preference list to store
-                    putmsg = PutReq(self, node, msg.key, msg.value, metadata)
+                    putmsg = PutReq(self, node, msg.key, msg.value, metadata, msg_id=seqno)
                     Framework.send_message(putmsg)
                     reqcount = reqcount + 1
                 if reqcount >= DynamoNode.N:
@@ -66,7 +66,7 @@ class DynamoNode(Node):
         self.pending_get_msg[(msg.key, seqno)] = msg
         reqcount = 0
         for node in preference_list:
-            getmsg = GetReq(self, node, msg.key)
+            getmsg = GetReq(self, node, msg.key, msg_id=seqno)
             Framework.send_message(getmsg)
             reqcount = reqcount + 1
             if reqcount >= DynamoNode.N:
@@ -80,7 +80,7 @@ class DynamoNode(Node):
         Framework.send_message(putrsp)
 # PART 6
     def rcv_putrsp(self, putrsp):
-        (nodename, seqno) = putrsp.metadata # replace with vector clock
+        seqno = putrsp.msg_id
         if (putrsp.key, seqno) in self.pending_put:
             self.pending_put[(putrsp.key, seqno)].add(putrsp.from_node)
             if len(self.pending_put[(putrsp.key, seqno)]) >= DynamoNode.W:
@@ -103,7 +103,7 @@ class DynamoNode(Node):
             Framework.send_message(getrsp)
 # PART 8
     def rcv_getrsp(self, getrsp):
-        (nodename, seqno) = getrsp.metadata # replace with vector clock
+        seqno = getrsp.msg_id
         if (getrsp.key, seqno) in self.pending_get:
             self.pending_get[(getrsp.key, seqno)].add((getrsp.from_node, getrsp.value, getrsp.metadata))
             if len(self.pending_get[(getrsp.key, seqno)]) >= DynamoNode.R:
@@ -143,8 +143,8 @@ class DynamoClientNode(Node):
     def get(self, key, destnode=None):
         if destnode is None: # Pick a random node to send the request to
             destnode = random.choice(DynamoNode.nodelist)
-        putmsg = ClientGet(self, destnode, key)
-        Framework.send_message(putmsg)
+        getmsg = ClientGet(self, destnode, key)
+        Framework.send_message(getmsg)
 # PART 12
     def rcvmsg(self, msg):
         pass # Client does nothing with results

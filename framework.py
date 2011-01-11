@@ -6,7 +6,6 @@ from collections import deque
 
 from node import Node
 from history import History
-from message import Message
 from timer import Timer
 import logconfig
 
