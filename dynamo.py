@@ -22,10 +22,10 @@ class DynamoNode(Node):
     def __init__(self):
         Node.__init__(self)
         self.store = {} # key => (value, metadata)
-        self.pending_put = {} # (key, sequence) => set of nodes that have stored
-        self.pending_put_msg = {} # (key, sequence) => original client message
-        self.pending_get = {} # (key, sequence) => set of (node, value, metadata) tuples
-        self.pending_get_msg = {} # (key, sequence) => original client message
+        self.pending_put = {} # seqno => set of nodes that have stored
+        self.pending_put_msg = {} # seqno => original client message
+        self.pending_get = {} # seqno => set of (node, value, metadata) tuples
+        self.pending_get_msg = {} # seqno => original client message
         # Rebuild the consistent hash table 
         DynamoNode.nodelist.append(self)
         DynamoNode.chash = ConsistentHashTable(DynamoNode.nodelist, DynamoNode.T)
@@ -46,8 +46,8 @@ class DynamoNode(Node):
             metadata = (self.name, seqno) # For now, metadata is just sequence number at coordinator
             self.store[msg.key] = (msg.value, metadata)
             # Send out to other nodes, and keep track of who has replied
-            self.pending_put[(msg.key, seqno)] = set([self])
-            self.pending_put_msg[(msg.key, seqno)] = msg
+            self.pending_put[seqno] = set([self])
+            self.pending_put_msg[seqno] = msg
             reqcount = 1
             for node in preference_list:
                 if node != self:
@@ -62,8 +62,8 @@ class DynamoNode(Node):
     def rcv_clientget(self, msg):
         preference_list = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N)
         seqno = self.generate_sequence_number()
-        self.pending_get[(msg.key, seqno)] = set()
-        self.pending_get_msg[(msg.key, seqno)] = msg
+        self.pending_get[seqno] = set()
+        self.pending_get_msg[seqno] = msg
         reqcount = 0
         for node in preference_list:
             getmsg = GetReq(self, node, msg.key, msg_id=seqno)
@@ -81,14 +81,14 @@ class DynamoNode(Node):
 # PART 6
     def rcv_putrsp(self, putrsp):
         seqno = putrsp.msg_id
-        if (putrsp.key, seqno) in self.pending_put:
-            self.pending_put[(putrsp.key, seqno)].add(putrsp.from_node)
-            if len(self.pending_put[(putrsp.key, seqno)]) >= DynamoNode.W:
+        if seqno in self.pending_put:
+            self.pending_put[seqno].add(putrsp.from_node)
+            if len(self.pending_put[seqno]) >= DynamoNode.W:
                 _logger.info("%s: written %d copies of %s=%s so done", self, DynamoNode.W, putrsp.key, putrsp.value)
-                _logger.debug("  copies at %s", [node.name for node in self.pending_put[(putrsp.key, seqno)]])
-                original_msg = self.pending_put_msg[(putrsp.key, seqno)]
-                del self.pending_put[(putrsp.key, seqno)]
-                del self.pending_put_msg[(putrsp.key, seqno)]
+                _logger.debug("  copies at %s", [node.name for node in self.pending_put[seqno]])
+                original_msg = self.pending_put_msg[seqno]
+                del self.pending_put[seqno]
+                del self.pending_put_msg[seqno]
                 # Reply to the original client
                 client_putrsp = ClientPutRsp(original_msg)
                 Framework.send_message(client_putrsp)
@@ -104,17 +104,17 @@ class DynamoNode(Node):
 # PART 8
     def rcv_getrsp(self, getrsp):
         seqno = getrsp.msg_id
-        if (getrsp.key, seqno) in self.pending_get:
-            self.pending_get[(getrsp.key, seqno)].add((getrsp.from_node, getrsp.value, getrsp.metadata))
-            if len(self.pending_get[(getrsp.key, seqno)]) >= DynamoNode.R:
+        if seqno in self.pending_get:
+            self.pending_get[seqno].add((getrsp.from_node, getrsp.value, getrsp.metadata))
+            if len(self.pending_get[seqno]) >= DynamoNode.R:
                 _logger.info("%s: read %d copies of %s=? so done", self, DynamoNode.R, getrsp.key)
-                _logger.debug("  copies at %s", [(node.name,value) for (node,value,_) in self.pending_get[(getrsp.key, seqno)]])
-                original_msg = self.pending_get_msg[(getrsp.key, seqno)]
+                _logger.debug("  copies at %s", [(node.name,value) for (node,value,_) in self.pending_get[seqno]])
+                original_msg = self.pending_get_msg[seqno]
                 results = set()
-                for (node, value, metadata) in self.pending_get[(getrsp.key, seqno)]:
+                for (node, value, metadata) in self.pending_get[seqno]:
                     results.add((value, metadata))
-                del self.pending_get[(getrsp.key, seqno)]
-                del self.pending_get_msg[(getrsp.key, seqno)]
+                del self.pending_get[seqno]
+                del self.pending_get_msg[seqno]
                 # Reply to the original client, including all received values
                 client_getrsp = ClientGetRsp(original_msg, results)
                 Framework.send_message(client_getrsp)
