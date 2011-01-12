@@ -1,5 +1,4 @@
 """Code to track history of all activity"""
-#@@@ HTMLoutput version
 import copy
 from bisect import bisect
 import logging
