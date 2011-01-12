@@ -243,16 +243,13 @@ processed by 3 nodes, but the <b>W</b> parameter is only 2 and so the final resp
 process to complete.
 </p>
 <div class="highlight"><pre>
-#result <python test_put.py --seed 1>
+#result <python test_dynamo.py --seed 1 SimpleTestCase.test_simple_put>
 </pre></div>
 
 
 
-???? interspersed Puts...check the 
+???? interspersed Puts...check the ???
 
-??? move everything to unittest infrastructure, allow single entrypoint, move test code out of modules
-
-???
 
 <a name="simple_get"><h2>Getting it Back</h2></a>
 <p>
@@ -277,7 +274,7 @@ so we return the whole set (folding duplicates).
 The whole process looks like the following:
 </p>
 <div class="highlight"><pre>
-#result <python test_get.py --seed 1>
+#result <python test_dynamo.py --seed 1 SimpleTestCase.test_simple_get>
 </pre></div>
 
 

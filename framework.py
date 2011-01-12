@@ -16,7 +16,7 @@ class Framework:
     queue = deque([]) # queue of pending messages
     
     @classmethod
-    def reset():
+    def reset(cls):
         cuts = []
         queue = deque()
 

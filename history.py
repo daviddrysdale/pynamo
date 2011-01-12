@@ -1,5 +1,5 @@
 """Code to track history of all activity"""
-
+#@@@ HTMLoutput version
 import copy
 from bisect import bisect
 import logging
@@ -94,20 +94,24 @@ class History:
             if action == "send" or action == "forward":
                 if action == "forward":
                     from_node = msg.intermediate_node
-                    start_marker = "+"
+                    start_marker = '+' # @@@
                 else:
                     from_node = msg.from_node
-                    start_marker = "o"
+                    start_marker = 'o'
                 # Pick a suitable spot for the vertical line for this message
                 vertcol = _pick_column(vertlines, column, 
                                        column[from_node], column[msg.to_node])
                 vertlines[msg] = vertcol
                 left2right = (column[from_node] < vertcol)
+                if left2right:
+                    end_marker = '+' # SOUTHWEST
+                else:
+                    end_marker = '+' # SOUTHEAST
                 
                 # Draw the horizontal line
                 _draw_horiz(this_line, 
                             column[from_node], start_marker,
-                            vertcol, '+')
+                            vertcol, end_marker)
                 # Add the message text
                 msgtext = str(msg)
                 if left2right: #    o----+ Text
@@ -119,6 +123,10 @@ class History:
                 
             elif action == "deliver" or action == "drop":
                 left2right = (vertcol < column[msg.to_node])
+                if left2right:
+                    start_marker = '+' # NORTHEAST
+                else:
+                    start_marker = '+' # NORTHWEST
                 if action == "drop":
                     end_marker = 'X'
                 elif left2right:
@@ -132,7 +140,7 @@ class History:
     
                 # Draw the horizontal line
                 _draw_horiz(this_line,
-                            vertcol, '+',
+                            vertcol, start_marker,
                             column[msg.to_node], end_marker)
             elif action == "cut":
                 # Find the existing vertline that corresponds to this message, and 
