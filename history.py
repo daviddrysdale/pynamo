@@ -122,6 +122,11 @@ class History:
                     _write_text(this_line, vertcol - len(msgtext) - 1, msgtext + ' ')
                 
             elif action == "deliver" or action == "drop":
+                # Find the existing vertline that corresponds to this message, and 
+                # remove it
+                vertcol = vertlines[msg]
+                del vertlines[msg] 
+
                 left2right = (vertcol < column[msg.to_node])
                 if left2right:
                     start_marker = '+' # NORTHEAST
@@ -133,10 +138,6 @@ class History:
                     end_marker = '>'
                 else:
                     end_marker = '<'
-                # Find the existing vertline that corresponds to this message, and 
-                # remove it
-                vertcol = vertlines[msg]
-                del vertlines[msg] 
     
                 # Draw the horizontal line
                 _draw_horiz(this_line,
