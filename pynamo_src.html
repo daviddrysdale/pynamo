@@ -243,12 +243,13 @@ processed by 3 nodes, but the <b>W</b> parameter is only 2 and so the final resp
 process to complete.
 </p>
 <div class="highlight"><pre>
-#result <python test_dynamo.py --seed 1 SimpleTestCase.test_simple_put>
-</pre></div>
-
-
-
-???? interspersed Puts...check the ???
+#result <python test_dynamo.py --seed 1 SimpleTestCase.test_simple_put></pre></div>
+<p>
+Interspersing Put operations for two different keys, from two different clients makes the ladder diagram more
+complicated, but the underlying details are the same.
+</p>
+<div class="highlight"><pre>
+#result <python test_dynamo.py --seed 1 SimpleTestCase.test_double_put></pre></div>
 
 
 <a name="simple_get"><h2>Getting it Back</h2></a>
@@ -274,8 +275,7 @@ so we return the whole set (folding duplicates).
 The whole process looks like the following:
 </p>
 <div class="highlight"><pre>
-#result <python test_dynamo.py --seed 1 SimpleTestCase.test_simple_get>
-</pre></div>
+#result <python test_dynamo.py --seed 1 SimpleTestCase.test_simple_get></pre></div>
 
 
 <a name=""><h2>Coping With Failure</h2></a>
