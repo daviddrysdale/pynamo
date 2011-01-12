@@ -93,7 +93,7 @@ class History:
             if action == "send" or action == "forward":
                 if action == "forward":
                     from_node = msg.intermediate_node
-                    start_marker = '+' # @@@
+                    start_marker = '+' 
                 else:
                     from_node = msg.from_node
                     start_marker = 'o'
