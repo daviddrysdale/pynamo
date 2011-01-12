@@ -15,7 +15,7 @@ class SimpleTestCase(unittest.TestCase):
         pass
 
     def test_simple_put(self):
-        for _ in range(10):
+        for _ in range(6):
             DynamoNode()
         a = DynamoClientNode('a')
         a.put('K1', None, 1)
@@ -23,7 +23,7 @@ class SimpleTestCase(unittest.TestCase):
         print History.ladder()
     
     def test_simple_get(self):
-        for _ in range(10):
+        for _ in range(6):
             DynamoNode()
         a = DynamoClientNode('a')
         a.put('K1', None, 1)
@@ -32,6 +32,17 @@ class SimpleTestCase(unittest.TestCase):
         a.get('K1')
         Framework.schedule()
         print History.ladder(start_line=from_line)
+
+    def test_double_put(self):
+        for _ in range(6):
+            DynamoNode()
+        a = DynamoClientNode('a')
+        b = DynamoClientNode('b')
+        a.put('K1', None, 1)
+        Framework.schedule(1)
+        b.put('K2', None, 17)
+        Framework.schedule()
+        print History.ladder(spacing=14)
 
 if __name__ == "__main__":
     for ii in range(1, len(sys.argv)-1): # pragma: no cover
