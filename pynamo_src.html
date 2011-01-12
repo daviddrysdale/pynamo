@@ -40,6 +40,9 @@ the rare cases where some important details have been swept under the carper.
 <ul>
   <li><a href="#consistent_hash">Section 4.2/4.3: Partitioning Algorithm</a></li>
   <li><a href="#vector_clock">Section 4.4: Vector Clocks</a></li>
+  <li><a href="#simple_put"><code>Put</code>ting It Together</a></li>
+  <li><a href="#simple_get">Getting it Back</a></li>
+  <li><a href="#failure">Coping With Failure</a></li>
   <li><a href="#framework">Appendix: Node Simulation Framework</a></li>
 </ul>
 
@@ -278,7 +281,7 @@ The whole process looks like the following:
 #result <python test_dynamo.py --seed 1 SimpleTestCase.test_simple_get></pre></div>
 
 
-<a name=""><h2>Coping With Failure</h2></a>
+<a name="failure"><h2>Coping With Failure</h2></a>
 
 ??? node failure
 
