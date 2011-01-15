@@ -4,7 +4,7 @@ import unittest
 
 from framework import Framework, reset
 from history import History
-from dynamo import DynamoNode, DynamoClientNode
+import dynamo1
 
 class SimpleTestCase(unittest.TestCase):
     """Test simple Dynamo function"""
@@ -16,16 +16,16 @@ class SimpleTestCase(unittest.TestCase):
 
     def test_simple_put(self):
         for _ in range(6):
-            DynamoNode()
-        a = DynamoClientNode('a')
+            dynamo1.DynamoNode()
+        a = dynamo1.DynamoClientNode('a')
         a.put('K1', None, 1)
         Framework.schedule()
         print History.ladder()
     
     def test_simple_get(self):
         for _ in range(6):
-            DynamoNode()
-        a = DynamoClientNode('a')
+            dynamo1.DynamoNode()
+        a = dynamo1.DynamoClientNode('a')
         a.put('K1', None, 1)
         Framework.schedule()
         from_line = len(History.history)
@@ -35,9 +35,9 @@ class SimpleTestCase(unittest.TestCase):
 
     def test_double_put(self):
         for _ in range(6):
-            DynamoNode()
-        a = DynamoClientNode('a')
-        b = DynamoClientNode('b')
+            dynamo1.DynamoNode()
+        a = dynamo1.DynamoClientNode('a')
+        b = dynamo1.DynamoClientNode('b')
         a.put('K1', None, 1)
         Framework.schedule(1)
         b.put('K2', None, 17)

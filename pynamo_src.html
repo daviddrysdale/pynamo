@@ -203,7 +203,7 @@ The client is outside of the Dynamo system proper, so these methods are straight
 message and send it to a random node in the Dynamo system (although this can be overridden with an explicit
 choice of node).
 </p>
-#include <dynamo.py:11>
+#include <dynamo1.py:11>
 <p>
 These messages are sent to a <code>DynamoNode</code>, whose definition includes some data structures.  The
 class includes some constants controlling the amount of replication, including the <b>N</b>, <b>W</b>
@@ -211,7 +211,7 @@ and <b>R</b> parameters described in section 4.5 of the paper.  The class also k
 <code>DynamoNode</code> instances there are, and keeps a 
 <a href="#consistent_hash">consistent hash table</a> that corresponds to those instances.
 </p>
-#include <dynamo.py:2>
+#include <dynamo1.py:2>
 <p>
 Each instance of <code>DynamoNode</code> has some attributes of its own.  The <code>store</code> attribute is
 a Python dictionary that simulates the node's local data store; this is where the key/value pairs stored by
@@ -228,17 +228,17 @@ arrive at a random Dynamo node, and its first action is to figure out the <i>pre
     <b>Put</b> message to N-1 other nodes to get them to store it too.</li>
 </ul>
 </p>
-#include <dynamo.py:3>
+#include <dynamo1.py:3>
 <p>
 Continuing to follow the progress of a <code>put()</code> operation, the behaviour of the nodes that receive
 the <b>Put</b> messages is straightforward: they store the value, and send a response to say they've done it.
 </p>
-#include <dynamo.py:5>
+#include <dynamo1.py:5>
 <p>
 In turn, the original sending node ticks off these responses from its list of pending responses, and when it
 has had <b>W</b> total replies (including itself), the <code>put()</code> operation is done.
 </p>
-#include <dynamo.py:6>
+#include <dynamo1.py:6>
 <p>
 We can see an example of the whole process as a ladder diagram. Notice that the response goes back to the
 client before the final <b>Put</b> response arrives &ndash; the <b>N</b> parameter is 3, so the Put request is
@@ -264,16 +264,16 @@ whether or not it itself is on the preference list for the key.
 <p>
 So a client get request arrives at a node, which fans it out to <b>N</b> nodes on the preference list.
 </p>
-#include <dynamo.py:4>
+#include <dynamo1.py:4>
 <p>
 Each of those nodes simply retrieves the relevant information from its local data store and sends it back.
 </p>
-#include <dynamo.py:7>
+#include <dynamo1.py:7>
 <p>
 Finally, when enough (i.e. <b>R</b>) responses arrive, the first Dynamo node sends a confirmation response
 back to the client.  This part has a slight complication &ndash; the results aren't necessarily all the same,
 so we return the whole set (folding duplicates).
-#include <dynamo.py:8>
+#include <dynamo1.py:8>
 <p>
 The whole process looks like the following:
 </p>
@@ -282,6 +282,9 @@ The whole process looks like the following:
 
 
 <a name="failure"><h2>Coping With Failure</h2></a>
+<p>
+
+
 
 ??? node failure
  - failure of first DynamoNode on put... client retries
