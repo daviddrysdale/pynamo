@@ -43,7 +43,7 @@ class Framework:
             pass
         if (expect_reply and 
             'timerpop' in msg.from_node.__class__.__dict__ and
-            callable(msg.from_node.__dict__['timerpop'])):
+            callable(msg.from_node.__dict__['rsp_timer_pop'])):
             # @@@@ start timer
             pass
 
