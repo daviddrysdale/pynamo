@@ -15,6 +15,7 @@ _logger = logging.getLogger('dynamo')
 class Framework:
     cuts = [] # List of incommunicado sets of nodes
     queue = deque([]) # queue of pending messages
+    pending_timers = {} # request => timer
     
     @classmethod
     def reset(cls):
@@ -39,13 +40,21 @@ class Framework:
         cls.queue.append(msg)
         History.add("send", msg)
         if isinstance(msg, ResponseMessage):
-            # @@@ cancel original timer if present
-            pass
+            if msg.response_to in cls.pending_timers:
+                # Cancel request timer as we've seen a response
+                Timer.cancel_timer(pending_timers[msg.response_to])
+                del cls.pending_timers[msg.response_to]
         if (expect_reply and 
             'timerpop' in msg.from_node.__class__.__dict__ and
             callable(msg.from_node.__dict__['rsp_timer_pop'])):
-            # @@@@ start timer
-            pass
+            cls.pending_timers[msg] = Timer.start_timer(msg.from_node, reason=msg, callback=Framework.rsp_timer_pop)
+
+    @classmethod
+    def rsp_timer_pop(cls, reqmsg):
+        # Remove the record of the pending timer
+        del cls.pending_timers[reqmsg]
+        # Call through to the node's rsp_timer_pop() method
+        msg.from_node.rsp_timer_pop(reqmsg)
 
     @classmethod
     def forward_message(cls, msg, new_to_node):
@@ -58,7 +67,7 @@ class Framework:
         History.add("forward", fwd_msg)
     
     @classmethod
-    def schedule(cls, num_to_process=32768):
+    def schedule(cls, num_to_process=32768, pop_timers=True):
         """Schedule given number of pending messages"""
         while cls.queue and num_to_process > 0:
             msg = cls.queue.popleft()
@@ -73,7 +82,9 @@ class Framework:
                 History.add("deliver", msg)
                 msg.to_node.rcvmsg(msg)
             num_to_process = num_to_process - 1
-        # If there's no messages to process, pop timers @@@
+        if not cls.queue and pop_timers:
+            # Pop the first pending timer
+            pass # @@@
 
 def reset():
     """Reset all message and other history"""

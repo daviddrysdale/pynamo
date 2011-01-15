@@ -24,9 +24,10 @@ class NodeAction(Message):
 
 class TimerMessage(Message):
     """Internal message indicating a timer event at a node"""
-    def __init__(self, node, reason): 
+    def __init__(self, node, reason, callback=None): 
         Message.__init__(self, node, node)
         self.reason = reason
+        self.callback = callback
     def __str__(self):
         if self.reason is None:
             return "Timer"

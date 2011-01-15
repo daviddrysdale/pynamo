@@ -15,9 +15,9 @@ class Timer:
         cls.pending = deque()
 
     @classmethod
-    def start_timer(cls, node, reason=None):
+    def start_timer(cls, node, reason=None, callback=None):
         """Start a timer for the given node, with an option reason code"""
-        tmsg = TimerMessage(node, reason)
+        tmsg = TimerMessage(node, reason, callback=callback)
         cls.pending.append(tmsg)
         History.add("start", tmsg)
         return tmsg
@@ -33,6 +33,10 @@ class Timer:
     def pop_timer(cls):
         """Pop the first pending timer"""
         tmsg = cls.pending.popleft()
-        tmsg.from_node.timer_pop(tmsg.reason)
+        if tmsg.callback is None:
+            # Default to calling Node.timer_pop()
+            tmsg.from_node.timer_pop(tmsg.reason)
+        else:
+            tmsg.callback(tmsg.reason)
         History.add("pop", tmsg)
 
