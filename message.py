@@ -8,6 +8,12 @@ class Message:
     def __str__(self):
         return "%s->%s:" % (self.from_node, self.to_node)
 
+class ResponseMessage(Message):
+    """Base type for messages that are replies to existing messages"""
+    def __init__(self, req):
+        Message.__init__(self, req.to_node, req.from_node, msg_id=req.msg_id)
+        self.response_to = req
+
 # Internal messages used to indicate events in the environment
 class NodeAction(Message):
     """Internal message indicating an action at a node"""

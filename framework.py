@@ -7,6 +7,7 @@ from collections import deque
 from node import Node
 from history import History
 from timer import Timer
+from message import ResponseMessage
 import logconfig
 
 _logger = logging.getLogger('dynamo')
@@ -32,11 +33,19 @@ class Framework:
         return True
     
     @classmethod
-    def send_message(cls, msg):
+    def send_message(cls, msg, expect_reply=True):
         """Send a message"""
         _logger.info("Enqueue %s->%s: %s", msg.from_node, msg.to_node, msg)
         cls.queue.append(msg)
         History.add("send", msg)
+        if isinstance(msg, ResponseMessage):
+            # @@@ cancel original timer if present
+            pass
+        if (expect_reply and 
+            'timerpop' in msg.from_node.__class__.__dict__ and
+            callable(msg.from_node.__dict__['timerpop'])):
+            # @@@@ start timer
+            pass
 
     @classmethod
     def forward_message(cls, msg, new_to_node):
@@ -64,6 +73,7 @@ class Framework:
                 History.add("deliver", msg)
                 msg.to_node.rcvmsg(msg)
             num_to_process = num_to_process - 1
+        # If there's no messages to process, pop timers @@@
 
 def reset():
     """Reset all message and other history"""
