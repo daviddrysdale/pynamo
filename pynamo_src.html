@@ -284,7 +284,11 @@ The whole process looks like the following:
 <a name="failure"><h2>Coping With Failure</h2></a>
 
 ??? node failure
-
+ - failure of first DynamoNode on put... client retries
+ - failure of 2nd node in preference list...works OK
+ - failure of 2nd and 3rd node in 3-entry preference list..fails
+ - lead into timer stuff
+ - failure of coordinator (1st node in preference list)
 
 ??? link failure
 
