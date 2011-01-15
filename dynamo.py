@@ -117,7 +117,9 @@ class DynamoNode(Node):
                 del self.pending_get[seqno]
                 del self.pending_get_msg[seqno]
                 # Reply to the original client, including all received values
-                client_getrsp = ClientGetRsp(original_msg, results)
+                client_getrsp = ClientGetRsp(original_msg, 
+                                             [value for (value, metadata) in results],
+                                             [metadata for (value, metadata) in results])
                 Framework.send_message(client_getrsp)
 # PART 9
     def rcvmsg(self, msg):
