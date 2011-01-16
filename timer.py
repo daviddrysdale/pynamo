@@ -4,11 +4,16 @@ from collections import deque
 import logging
 
 from message import TimerMessage
+from history import History
 
 _logger = logging.getLogger('dynamo')
 
 class Timer:
     pending = deque()
+
+    @classmethod
+    def pending_count(cls):
+        return len(cls.pending)
     
     @classmethod
     def reset(cls):
