@@ -20,7 +20,7 @@ class NodeAction(Message):
     def __init__(self, node): 
         Message.__init__(self, node, node)
     def __str__(self): 
-        return str(self.node)
+        return str(self.from_node)
 
 class TimerMessage(Message):
     """Internal message indicating a timer event at a node"""
