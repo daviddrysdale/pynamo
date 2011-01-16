@@ -29,7 +29,4 @@ class TimerMessage(Message):
         self.reason = reason
         self.callback = callback
     def __str__(self):
-        if self.reason is None:
-            return "Timer"
-        else:
-            return "Timer(%s)" % self.reason
+        return "Timer"
