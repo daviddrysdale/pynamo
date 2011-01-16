@@ -38,10 +38,10 @@ class Timer:
     def pop_timer(cls):
         """Pop the first pending timer"""
         tmsg = cls.pending.popleft()
+        History.add("pop", tmsg)
         if tmsg.callback is None:
             # Default to calling Node.timer_pop()
             tmsg.from_node.timer_pop(tmsg.reason)
         else:
             tmsg.callback(tmsg.reason)
-        History.add("pop", tmsg)
 
