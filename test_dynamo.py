@@ -105,7 +105,6 @@ class SimpleTestCase(unittest.TestCase):
         # Fail at the forwarding node before it gets a chance to forward
         destnode.fail()
         Framework.schedule()
-        print "\n".join(["%s: %s" % (e[0],str(e[1])) for e in History.history])
         print History.ladder()
 
 if __name__ == "__main__":
