@@ -42,11 +42,12 @@ class Framework:
         if isinstance(msg, ResponseMessage):
             if msg.response_to in cls.pending_timers:
                 # Cancel request timer as we've seen a response
-                Timer.cancel_timer(pending_timers[msg.response_to])
+                Timer.cancel_timer(cls.pending_timers[msg.response_to])
                 del cls.pending_timers[msg.response_to]
-        if (expect_reply and 
-            'timerpop' in msg.from_node.__class__.__dict__ and
-            callable(msg.from_node.__dict__['rsp_timer_pop'])):
+        if (expect_reply and
+            not isinstance(msg, ResponseMessage) and
+            'rsp_timer_pop' in msg.from_node.__class__.__dict__ and
+            callable(msg.from_node.__class__.__dict__['rsp_timer_pop'])):
             cls.pending_timers[msg] = Timer.start_timer(msg.from_node, reason=msg, callback=Framework.rsp_timer_pop)
 
     @classmethod
@@ -54,7 +55,7 @@ class Framework:
         # Remove the record of the pending timer
         del cls.pending_timers[reqmsg]
         # Call through to the node's rsp_timer_pop() method
-        msg.from_node.rsp_timer_pop(reqmsg)
+        reqmsg.from_node.rsp_timer_pop(reqmsg)
 
     @classmethod
     def forward_message(cls, msg, new_to_node):
@@ -67,24 +68,41 @@ class Framework:
         History.add("forward", fwd_msg)
     
     @classmethod
-    def schedule(cls, num_to_process=32768, pop_timers=True):
+    def schedule(cls, msgs_to_process=None, timers_to_process=None):
         """Schedule given number of pending messages"""
-        while cls.queue and num_to_process > 0:
-            msg = cls.queue.popleft()
-            if msg.to_node.failed:
-                _logger.info("Drop %s->%s: %s as destination down", msg.from_node, msg.to_node, msg)
-                History.add("drop", msg)
-            elif not Framework.reachable(msg.from_node, msg.to_node):
-                _logger.info("Drop %s->%s: %s as route down", msg.from_node, msg.to_node, msg)
-                History.add("cut", msg)
-            else:
-                _logger.info("Dequeue %s->%s: %s", msg.from_node, msg.to_node, msg)
-                History.add("deliver", msg)
-                msg.to_node.rcvmsg(msg)
-            num_to_process = num_to_process - 1
-        if not cls.queue and pop_timers:
-            # Pop the first pending timer
-            pass # @@@
+        if msgs_to_process is None: msgs_to_process = 32768
+        if timers_to_process is None: timers_to_process = 32768
+        
+        while cls._work_to_do():
+            # Process all the queued up messages (which may enqueue more along the way)
+            while cls.queue:
+                msg = cls.queue.popleft()
+                if msg.to_node.failed:
+                    _logger.info("Drop %s->%s: %s as destination down", msg.from_node, msg.to_node, msg)
+                    History.add("drop", msg)
+                elif not Framework.reachable(msg.from_node, msg.to_node):
+                    _logger.info("Drop %s->%s: %s as route down", msg.from_node, msg.to_node, msg)
+                    History.add("cut", msg)
+                else:
+                    _logger.info("Dequeue %s->%s: %s", msg.from_node, msg.to_node, msg)
+                    History.add("deliver", msg)
+                    msg.to_node.rcvmsg(msg)
+                msgs_to_process = msgs_to_process - 1
+                if msgs_to_process == 0: return
+    
+            # No pending messages; potentially pop a (single) timer
+            if Timer.pending_count() > 0 and timers_to_process > 0:
+                # Pop the first pending timer; this may enqueue work
+                Timer.pop_timer()
+                timers_to_process = timers_to_process - 1
+                if timers_to_process == 0: return
+
+    @classmethod
+    def _work_to_do(cls):
+        """Indicate whether there is work to do"""
+        if cls.queue: return True
+        if Timer.pending_count() > 0: return True
+        return False
 
 def reset():
     """Reset all message and other history"""
