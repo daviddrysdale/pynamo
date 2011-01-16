@@ -148,6 +148,13 @@ class DynamoClientNode(Node):
             destnode = random.choice(DynamoNode.nodelist)
         getmsg = ClientGet(self, destnode, key)
         Framework.send_message(getmsg)
+    def rsp_timer_pop(self, reqmsg):
+        if isinstance(reqmsg, ClientPut): # retry
+            _logger.info("Put request timed out; retrying")
+            self.put(reqmsg.key, reqmsg.metadata, reqmsg.value)
+        elif isinstance(reqmsg, ClientGet): # retry
+            _logger.info("Get request timed out; retrying")
+            self.get(reqmsg.key)
 # PART 12
     def rcvmsg(self, msg):
         pass # Client does nothing with results
