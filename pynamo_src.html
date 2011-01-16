@@ -303,7 +303,7 @@ original sender of the failure.  To use this facility, the sender just needs to 
 <p>
 To illustrate, here's the changes to the client to get it to resend any request on failure.
 </p>
-#include <dynamo.py:clientnode>
+#diff <dynamo1.py:clientnode> <dynamo.py:clientnode>
 <p>
 To show this in action, we can see what happens if the first receiving node fails; the client eventually
 retries and picks a different node at random.

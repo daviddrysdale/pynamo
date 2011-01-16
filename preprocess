@@ -3,6 +3,7 @@ import sys
 import re
 import fileinput
 import subprocess
+import difflib
 import traceback
 try:
     from pygments import highlight
@@ -13,8 +14,10 @@ except Exception:
     GOT_PYGMENTS = False
 
 RE_PYFILE = re.compile(r'^.*\.py')
-RE_INCLUDE = re.compile(r'^\s*#include \<(?P<filename>[^:]*)(:(?P<partid>\w+))?\>\s*$')
-RE_RESULT = re.compile(r'^\s*#result \<(?P<command>[^>]*)\>(?P<rest>.*)$')
+RE_INCLUDE = re.compile(r'^\s*#include\s+\<(?P<filename>[^:]*)(:(?P<partid>\w+))?\>\s*$')
+RE_DIFF = re.compile(r'^\s*#diff\s+\<(?P<old_filename>[^:]*)(:(?P<old_partid>\w+))?\>\s*'
+                     r'\<(?P<new_filename>[^:]*)(:(?P<new_partid>\w+))?\>\s*$')
+RE_RESULT = re.compile(r'^\s*#result\s+\<(?P<command>[^>]*)\>(?P<rest>.*)$')
 RE_PYTHON = re.compile(r'^\s*#python\s*$')
 RE_ENDPYTHON = re.compile(r'^\s*#endpython\s*$')
 RE_IGNORE = re.compile(r'IGNOREBEYOND')
@@ -58,6 +61,7 @@ def read_file(filename, desired_partid=None):
 interactive = False
 python_lines = []
 for line in fileinput.input():
+    m_diff = RE_DIFF.match(line)
     m_inc = RE_INCLUDE.match(line)
     m_res = RE_RESULT.match(line)
     m_start = RE_PYTHON.match(line)
@@ -92,6 +96,23 @@ for line in fileinput.input():
             # Default to raw printout
             print HTML_PRE_START
             print file_conts
+            print HTML_PRE_END
+    elif m_diff:
+        old_filename = m_diff.group('old_filename')
+        old_inclines = read_file(old_filename, m_diff.group('old_partid'))
+        new_filename = m_diff.group('new_filename')
+        new_inclines = read_file(new_filename, m_diff.group('new_partid'))
+        old_file_conts = '\n'.join(old_inclines)
+        new_file_conts = '\n'.join(new_inclines)
+        differ = difflib.Differ()
+        diffs = differ.compare(old_inclines, new_inclines)
+        diff_conts = '\n'.join(diffs)
+        if RE_PYFILE.match(new_filename) and GOT_PYGMENTS:
+            print highlight(diff_conts, PythonLexer(), HtmlFormatter())
+        else:
+            # Default to raw printout
+            print HTML_PRE_START
+            print diff_conts
             print HTML_PRE_END
     elif m_res:
         cmd = m_res.group('command')
