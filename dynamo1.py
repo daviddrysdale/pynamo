@@ -10,7 +10,7 @@ from framework import Framework
 from hash_multiple import ConsistentHashTable
 from dynamomessages import *
 _logger = logging.getLogger('dynamo')
-# PART 2
+# PART dynamonode
 class DynamoNode(Node):
     T = 10 # Number of "tokens"/"virtual nodes"/"repeats" in consistent hash table
     N = 3 # Number of nodes to replicate at
@@ -29,7 +29,7 @@ class DynamoNode(Node):
         # Rebuild the consistent hash table 
         DynamoNode.nodelist.append(self)
         DynamoNode.chash = ConsistentHashTable(DynamoNode.nodelist, DynamoNode.T)
-# PART 3
+# PART rcv_clientput
     def rcv_clientput(self, msg):
         preference_list = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N)
         # Determine if we are in the list
@@ -58,7 +58,7 @@ class DynamoNode(Node):
                 if reqcount >= DynamoNode.N:
                     # preference_list may have more than N entries to allow for failed nodes
                     break
-# PART 4
+# PART rcv_clientget
     def rcv_clientget(self, msg):
         preference_list = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N)
         seqno = self.generate_sequence_number()
@@ -72,13 +72,13 @@ class DynamoNode(Node):
             if reqcount >= DynamoNode.N:
                 # preference_list may have more than N entries to allow for failed nodes
                 break
-# PART 5
+# PART rcv_put
     def rcv_put(self, putmsg):
         _logger.info("%s: store %s=%s", self, putmsg.key, putmsg.value)
         self.store[putmsg.key] = (putmsg.value, putmsg.metadata)
         putrsp = PutRsp(putmsg)
         Framework.send_message(putrsp)
-# PART 6
+# PART rcv_putrsp
     def rcv_putrsp(self, putrsp):
         seqno = putrsp.msg_id
         if seqno in self.pending_put:
@@ -94,14 +94,14 @@ class DynamoNode(Node):
                 Framework.send_message(client_putrsp)
         else:
             pass # Superfluous reply
-# PART 7
+# PART rcv_get
     def rcv_get(self, getmsg):
         _logger.info("%s: retrieve %s=?", self, getmsg.key)
         if getmsg.key in self.store:
             (value, metadata) = self.store[getmsg.key]
             getrsp = GetRsp(getmsg, value, metadata)
             Framework.send_message(getrsp)
-# PART 8
+# PART rcv_getrsp
     def rcv_getrsp(self, getrsp):
         seqno = getrsp.msg_id
         if seqno in self.pending_get:
@@ -121,7 +121,7 @@ class DynamoNode(Node):
                                              [value for (value, metadata) in results],
                                              [metadata for (value, metadata) in results])
                 Framework.send_message(client_getrsp)
-# PART 9
+# PART rcvmsg
     def rcvmsg(self, msg):
         if isinstance(msg, ClientPut): self.rcv_clientput(msg)
         elif isinstance(msg, PutReq): self.rcv_put(msg)
@@ -130,13 +130,13 @@ class DynamoNode(Node):
         elif isinstance(msg, GetReq): self.rcv_get(msg)
         elif isinstance(msg, GetRsp): self.rcv_getrsp(msg)
         else: raise TypeError("Unexpected message type %s", msg.__class__)
-# PART 10
+# PART get_contents
     def get_contents(self):
         results = []
         for key,value in self.store.items():
             results.append("%s:%s" % (key,value[0]))
         return results
-# PART 11
+# PART clientnode
 class DynamoClientNode(Node):
     def put(self, key, metadata, value, destnode=None):
         if destnode is None: # Pick a random node to send the request to
@@ -148,6 +148,6 @@ class DynamoClientNode(Node):
             destnode = random.choice(DynamoNode.nodelist)
         getmsg = ClientGet(self, destnode, key)
         Framework.send_message(getmsg)
-# PART 12
+# PART clientrcvmsg
     def rcvmsg(self, msg):
         pass # Client does nothing with results

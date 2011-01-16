@@ -13,21 +13,22 @@ except Exception:
     GOT_PYGMENTS = False
 
 RE_PYFILE = re.compile(r'^.*\.py')
-RE_INCLUDE = re.compile(r'^\s*#include \<(?P<filename>[^:]*)(:(?P<partno>\d+))?\>\s*$')
+RE_INCLUDE = re.compile(r'^\s*#include \<(?P<filename>[^:]*)(:(?P<partid>\w+))?\>\s*$')
 RE_RESULT = re.compile(r'^\s*#result \<(?P<command>[^>]*)\>(?P<rest>.*)$')
 RE_PYTHON = re.compile(r'^\s*#python\s*$')
 RE_ENDPYTHON = re.compile(r'^\s*#endpython\s*$')
 RE_IGNORE = re.compile(r'IGNOREBEYOND')
 RE_SKIPLINE = re.compile(r'^\s*_logger.*$')
-RE_PARTMARK = re.compile(r'^\s*#\s*PART\s*(?P<partno>\d+)\s*$')
+RE_PARTMARK = re.compile(r'^\s*#\s*PART\s*(?P<partid>\w+)\s*$')
 HTML_PRE_START='<div class="highlight"><pre>'
 HTML_PRE_END='</pre></div>'
 
 _cache = {} # filename => [line1, line2, ...]
-_part = {} # filename => [part1_endline, part2_endline, ..]
-def read_file(filename, part=None):
+_part = {} # filename => {partid1: (start,end), partid2: (start,end)}
+def read_file(filename, desired_partid=None):
+    partid = None
     if filename not in _cache:
-        _part[filename] = [0]
+        _part[filename] = {}
         incfile = file(filename, 'r')
         inclines = []
         for incline in incfile:
@@ -35,17 +36,23 @@ def read_file(filename, part=None):
                 continue
             if RE_IGNORE.search(incline):
                 break
-            if RE_PARTMARK.match(incline):
-                _part[filename].append(len(inclines))
+            m = RE_PARTMARK.match(incline)
+            if m:
+                if partid is not None:
+                    _part[filename][partid][1] = len(inclines)
+                partid = m.group('partid')
+                _part[filename][partid] = [len(inclines),-1]
             else:
                 inclines.append(incline.rstrip())
-        _part[filename].append(len(inclines))
         _cache[filename] = inclines
-    if part is None:
+    if partid is not None: # Close out the final part
+        _part[filename][partid][1] = len(inclines)
+
+    if desired_partid is None:
         return _cache[filename]
     else:
-        start_line = _part[filename][int(part)-1]
-        end_line = _part[filename][int(part)]
+        start_line = _part[filename][desired_partid][0]
+        end_line = _part[filename][desired_partid][1]
         return _cache[filename][start_line:end_line]
 
 interactive = False
@@ -77,7 +84,7 @@ for line in fileinput.input():
         python_lines = []
     elif m_inc:
         filename = m_inc.group('filename')
-        inclines = read_file(filename, m_inc.group('partno'))
+        inclines = read_file(filename, m_inc.group('partid'))
         file_conts = '\n'.join(inclines)
         if RE_PYFILE.match(filename) and GOT_PYGMENTS:
             print highlight(file_conts, PythonLexer(), HtmlFormatter())

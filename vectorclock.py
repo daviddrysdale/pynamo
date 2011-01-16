@@ -2,6 +2,7 @@
 """Vector clock class"""
 import copy
 
+# PART coreclass
 class VectorClock(object):
     def __init__(self):
         self.clock = {} # node => counter
@@ -17,7 +18,7 @@ class VectorClock(object):
     def __str__(self):
         return "{%s}" % ",".join(["%s:%d" % (node, self.clock[node]) 
                                   for node in sorted(self.clock.keys())])
-# PART 2
+# PART comparisons
     # Comparison operations. Vector clocks are partially ordered, but not totally ordered.
     def __eq__(self, other):
         return self.clock == other.clock
@@ -34,7 +35,7 @@ class VectorClock(object):
         return (other<self)
     def __ge__(self, other):
         return (self==other) or (self > other)
-# PART 3
+# PART coalesce
     @classmethod
     def coalesce(cls, vcs):
         """Coalesce a container of VectorClock objects.
@@ -57,7 +58,7 @@ class VectorClock(object):
             if not subsumed:
                 result.append(copy.deepcopy(vc))
         return result
-# PART 4
+# PART converge
     @classmethod
     def converge(cls, vcs):
         """Return a single VectorClock that subsumes all of the input VectorClocks"""

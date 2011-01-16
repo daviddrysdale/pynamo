@@ -104,7 +104,7 @@ For 50 nodes with <b>100</b> copies of each node in the hash ring.
 A vector clock is easy to implement; it's basically a dictionary whose keys are nodes
 and whose values are the last-seen sequence number for that node.
 </p>
-#include <vectorclock.py:1>
+#include <vectorclock.py:coreclass>
 <p>
 We can add entries to the vector clock, simulating different nodes and their counters, with one proviso: a
 node's counter isn't allowed to go backwards.
@@ -129,7 +129,7 @@ We can also define an ordering operation <b>&lt;</b> on vector clocks
 <a href="http://www.python.org/dev/peps/pep-0207/">rich comparison</a> methods 
 to the <code>VectorClock</code> class.
 </p>
-#include <vectorclock.py:2>
+#include <vectorclock.py:comparisons>
 <p>
 This is a <a href="http://en.wikipedia.org/wiki/Partially_ordered_set">partial order</a>:
 <ul>
@@ -153,7 +153,7 @@ print (v3 < v1)
 This partial order forms the basis for the more important thing we can do with vector clocks &ndash; combine
 them.  
 </p>
-#include <vectorclock.py:3>
+#include <vectorclock.py:coalesce>
 <p>
 This operation folds together those vector clocks that are direct ancestors of each other, but keeping separate those
 that are not.
@@ -168,7 +168,7 @@ print (diverged_clocks[1] < diverged_clocks[0])
 Finally, we need to be able to build a single vector clock that has an arbitrary set of direct ancestors; in
 other words, a way of reconverging a divergent set of vector clocks.
 </p>
-#include <vectorclock.py:4>
+#include <vectorclock.py:converge>
 <p>
 Code that uses Dynamo needs to be able to resolve inconsistencies itself.  When it has done so, the new value
 for the key needs a vector clock that makes it clear that the inconsistency has been resolved.
@@ -203,7 +203,7 @@ The client is outside of the Dynamo system proper, so these methods are straight
 message and send it to a random node in the Dynamo system (although this can be overridden with an explicit
 choice of node).
 </p>
-#include <dynamo1.py:11>
+#include <dynamo1.py:clientnode>
 <p>
 These messages are sent to a <code>DynamoNode</code>, whose definition includes some data structures.  The
 class includes some constants controlling the amount of replication, including the <b>N</b>, <b>W</b>
@@ -211,7 +211,7 @@ and <b>R</b> parameters described in section 4.5 of the paper.  The class also k
 <code>DynamoNode</code> instances there are, and keeps a 
 <a href="#consistent_hash">consistent hash table</a> that corresponds to those instances.
 </p>
-#include <dynamo1.py:2>
+#include <dynamo1.py:dynamonode>
 <p>
 Each instance of <code>DynamoNode</code> has some attributes of its own.  The <code>store</code> attribute is
 a Python dictionary that simulates the node's local data store; this is where the key/value pairs stored by
@@ -228,17 +228,17 @@ arrive at a random Dynamo node, and its first action is to figure out the <i>pre
     <b>Put</b> message to N-1 other nodes to get them to store it too.</li>
 </ul>
 </p>
-#include <dynamo1.py:3>
+#include <dynamo1.py:rcv_clientput>
 <p>
 Continuing to follow the progress of a <code>put()</code> operation, the behaviour of the nodes that receive
 the <b>Put</b> messages is straightforward: they store the value, and send a response to say they've done it.
 </p>
-#include <dynamo1.py:5>
+#include <dynamo1.py:rcv_put>
 <p>
 In turn, the original sending node ticks off these responses from its list of pending responses, and when it
 has had <b>W</b> total replies (including itself), the <code>put()</code> operation is done.
 </p>
-#include <dynamo1.py:6>
+#include <dynamo1.py:rcv_putrsp>
 <p>
 We can see an example of the whole process as a ladder diagram. Notice that the response goes back to the
 client before the final <b>Put</b> response arrives &ndash; the <b>N</b> parameter is 3, so the Put request is
@@ -264,16 +264,16 @@ whether or not it itself is on the preference list for the key.
 <p>
 So a client get request arrives at a node, which fans it out to <b>N</b> nodes on the preference list.
 </p>
-#include <dynamo1.py:4>
+#include <dynamo1.py:rcv_clientget>
 <p>
 Each of those nodes simply retrieves the relevant information from its local data store and sends it back.
 </p>
-#include <dynamo1.py:7>
+#include <dynamo1.py:rcv_get>
 <p>
 Finally, when enough (i.e. <b>R</b>) responses arrive, the first Dynamo node sends a confirmation response
 back to the client.  This part has a slight complication &ndash; the results aren't necessarily all the same,
 so we return the whole set (folding duplicates).
-#include <dynamo1.py:8>
+#include <dynamo1.py:rcv_getrsp>
 <p>
 The whole process looks like the following:
 </p>
@@ -295,15 +295,25 @@ But if two nodes fail, then we're doomed:
 #result <python test_dynamo.py --seed 10 SimpleTestCase.test_simple_put_fail4></pre></div>
 
 <p>
-The first step in coping with failure is detecting it.  We use a timer to detect when a message hasn't had a
-response after a suitable period of time.
+The first step in coping with failure is detecting it.  The framework we're using can automatically start a timer
+for any request message that is sent, and after a suitable period without a response, it can notify the
+original sender of the failure.  To use this facility, the sender just needs to include a 
+<code>rsp_timer_pop</code> method in its class.
+</p>
+<p>
+To illustrate, here's the changes to the client to get it to resend any request on failure.
+</p>
+#include <dynamo.py:clientnode>
+<p>
+To show this in action, we can see what happens if the first receiving node fails; the client eventually
+retries and picks a different node at random.
 </p>
 <div class="highlight"><pre>
 #result <python test_dynamo.py --seed 10 SimpleTestCase.test_client_retry></pre></div>
 
+
+
 ??? node failure
- - failure of first DynamoNode on put... client retries
- - lead into timer stuff
  - failure of coordinator (1st node in preference list)
 
 ??? link failure
