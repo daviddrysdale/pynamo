@@ -40,10 +40,15 @@ class Framework:
         cls.queue.append(msg)
         History.add("send", msg)
         if isinstance(msg, ResponseMessage):
-            if msg.response_to in cls.pending_timers:
+            # figure out the original request this is a response to
+            try:
+                reqmsg = msg.response_to.original_msg
+            except Exception:
+                reqmsg = msg.response_to
+            if reqmsg in cls.pending_timers:
                 # Cancel request timer as we've seen a response
-                Timer.cancel_timer(cls.pending_timers[msg.response_to])
-                del cls.pending_timers[msg.response_to]
+                Timer.cancel_timer(cls.pending_timers[reqmsg])
+                del cls.pending_timers[reqmsg]
         if (expect_reply and
             not isinstance(msg, ResponseMessage) and
             'rsp_timer_pop' in msg.from_node.__class__.__dict__ and
@@ -63,6 +68,7 @@ class Framework:
         _logger.info("Enqueue(fwd) %s->%s: %s", msg.to_node, new_to_node, msg)
         fwd_msg = copy.copy(msg)
         fwd_msg.intermediate_node = fwd_msg.to_node
+        fwd_msg.original_msg = msg
         fwd_msg.to_node = new_to_node
         cls.queue.append(fwd_msg)
         History.add("forward", fwd_msg)
