@@ -287,7 +287,7 @@ Nothing we've written so far copes with failure.  If just one node were to fail,
 and (say) <b>W</b> is 2, we might just cope:
 </p>
 <div class="highlight"><pre>
-#result <python test_dynamo.py --seed 10 SimpleTestCase.test_simple_put_fail3></pre></div>
+#result <python test_dynamo.py --seed 10 SimpleTestCase.test_put1_fail_node2></pre></div>
 <p>
 But if two nodes fail, then we're doomed:
 </p>
@@ -309,7 +309,7 @@ To show this in action, we can see what happens if the first receiving node fail
 retries and picks a different node at random.
 </p>
 <div class="highlight"><pre>
-#result <python test_dynamo.py --seed 10 SimpleTestCase.test_client_retry></pre></div>
+#result <python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_initial_node></pre></div>
 <p>
 Inside the Dynamo network, each node keeps track of the nodes it believes to be failed.
 </p>

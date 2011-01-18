@@ -46,20 +46,26 @@ class SimpleTestCase(unittest.TestCase):
         Framework.schedule()
         print History.ladder(spacing=14)
 
-    def test_simple_put_fail1(self):
-        for _ in range(6):
-            dynamo1.DynamoNode()
-        a = dynamo1.DynamoClientNode('a')
-        destnode = random.choice(dynamo1.DynamoNode.nodelist)
+    def test_put1_fail_initial_node(self):
+        self.test_put_fail_initial_node(dynamo1)
+    def test_put2_fail_initial_node(self):
+        self.test_put_fail_initial_node(dynamo)
+    def test_put_fail_initial_node(self, cls):
+        for _ in range(6): cls.DynamoNode()
+        a = cls.DynamoClientNode('a')
+        destnode = random.choice(cls.DynamoNode.nodelist)
         a.put('K1', None, 1, destnode=destnode)
         # Fail at the forwarding node before it gets a chance to forward
         destnode.fail()
         Framework.schedule()
         print History.ladder()
 
-    def test_simple_put_fail2(self):
-        for _ in range(6):
-            dynamo1.DynamoNode()
+    def test_put1_fail_initial_node2(self):
+        self.test_put_fail_initial_node2(dynamo1)
+    def test_put2_fail_initial_node2(self):
+        self.test_put_fail_initial_node2(dynamo)
+    def test_put_fail_initial_node2(self, cls):
+        for _ in range(6): dynamo1.DynamoNode()
         a = dynamo1.DynamoClientNode('a')
         destnode = random.choice(dynamo1.DynamoNode.nodelist)
         a.put('K1', None, 1, destnode=destnode)
@@ -69,13 +75,16 @@ class SimpleTestCase(unittest.TestCase):
         Framework.schedule()
         print History.ladder()
 
-    def test_simple_put_fail3(self):
-        for _ in range(6):
-            dynamo1.DynamoNode()
-        a = dynamo1.DynamoClientNode('a')
+    def test_put1_fail_node2(self):
+        self.test_put_fail_node2(dynamo1)
+    def test_put2_fail_node2(self):
+        self.test_put_fail_node2(dynamo)
+    def test_put_fail_node2(self, cls):
+        for _ in range(6): cls.DynamoNode()
+        a = cls.DynamoClientNode('a')
         a.put('K1', None, 1)
         # Fail the second node in the preference list
-        pref_list = dynamo1.DynamoNode.chash.find_nodes('K1', 3)
+        pref_list = cls.DynamoNode.chash.find_nodes('K1', 3)
         Framework.schedule(1)
         pref_list[1].fail()
         Framework.schedule()
@@ -83,12 +92,15 @@ class SimpleTestCase(unittest.TestCase):
         Framework.schedule()
         print History.ladder()
 
-    def test_simple_put_fail4(self):
-        for _ in range(6):
-            dynamo1.DynamoNode()
-        a = dynamo1.DynamoClientNode('a')
+    def test_put1_fail_nodes23(self):
+        self.test_put_fail_nodes23(dynamo1)
+    def test_put2_fail_nodes23(self):
+        self.test_put_fail_nodes23(dynamo)
+    def test_put_fail_nodes23(self, cls):
+        for _ in range(6): cls.DynamoNode()
+        a = cls.DynamoClientNode('a')
         # Fail the second and third node in the preference list
-        pref_list = dynamo1.DynamoNode.chash.find_nodes('K1', 3)
+        pref_list = cls.DynamoNode.chash.find_nodes('K1', 3)
         a.put('K1', None, 1, destnode=pref_list[0])
         Framework.schedule(1)
         pref_list[1].fail()
@@ -96,55 +108,6 @@ class SimpleTestCase(unittest.TestCase):
         Framework.schedule()
         print History.ladder()
     
-    def test_client_retry(self):
-        for _ in range(6):
-            dynamo.DynamoNode()
-        a = dynamo.DynamoClientNode('a')
-        destnode = random.choice(dynamo.DynamoNode.nodelist)
-        a.put('K1', None, 1, destnode=destnode)
-        # Fail at the forwarding node before it gets a chance to forward
-        destnode.fail()
-        Framework.schedule()
-        print History.ladder()
-
-    def test_retry_put_fail2(self):
-        for _ in range(6):
-            dynamo.DynamoNode()
-        a = dynamo.DynamoClientNode('a')
-        destnode = random.choice(dynamo.DynamoNode.nodelist)
-        a.put('K1', None, 1, destnode=destnode)
-        # Fail at the forwarding node after it gets a chance to forward
-        Framework.schedule(1)
-        destnode.fail()
-        Framework.schedule()
-        print History.ladder()
-
-    def test_retry_put_fail3(self):
-        for _ in range(6):
-            dynamo.DynamoNode()
-        a = dynamo.DynamoClientNode('a')
-        a.put('K1', None, 1)
-        # Fail the second node in the preference list
-        pref_list = dynamo.DynamoNode.chash.find_nodes('K1', 3)
-        Framework.schedule(1)
-        pref_list[1].fail()
-        Framework.schedule()
-        a.get('K1')
-        Framework.schedule()
-        print History.ladder()
-
-    def test_retry_put_fail4(self):
-        for _ in range(6):
-            dynamo.DynamoNode()
-        a = dynamo.DynamoClientNode('a')
-        # Fail the second and third node in the preference list
-        pref_list = dynamo.DynamoNode.chash.find_nodes('K1', 3)
-        a.put('K1', None, 1, destnode=pref_list[0])
-        Framework.schedule(1)
-        pref_list[1].fail()
-        pref_list[2].fail()
-        Framework.schedule()
-        print History.ladder()
     
 if __name__ == "__main__":
     for ii in range(1, len(sys.argv)-1): # pragma: no cover
