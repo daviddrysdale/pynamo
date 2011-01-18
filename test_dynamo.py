@@ -87,9 +87,9 @@ class SimpleTestCase(unittest.TestCase):
         for _ in range(6):
             dynamo1.DynamoNode()
         a = dynamo1.DynamoClientNode('a')
-        a.put('K1', None, 1)
         # Fail the second and third node in the preference list
         pref_list = dynamo1.DynamoNode.chash.find_nodes('K1', 3)
+        a.put('K1', None, 1, destnode=pref_list[0])
         Framework.schedule(1)
         pref_list[1].fail()
         pref_list[2].fail()
@@ -107,6 +107,45 @@ class SimpleTestCase(unittest.TestCase):
         Framework.schedule()
         print History.ladder()
 
+    def test_retry_put_fail2(self):
+        for _ in range(6):
+            dynamo.DynamoNode()
+        a = dynamo.DynamoClientNode('a')
+        destnode = random.choice(dynamo.DynamoNode.nodelist)
+        a.put('K1', None, 1, destnode=destnode)
+        # Fail at the forwarding node after it gets a chance to forward
+        Framework.schedule(1)
+        destnode.fail()
+        Framework.schedule()
+        print History.ladder()
+
+    def test_retry_put_fail3(self):
+        for _ in range(6):
+            dynamo.DynamoNode()
+        a = dynamo.DynamoClientNode('a')
+        a.put('K1', None, 1)
+        # Fail the second node in the preference list
+        pref_list = dynamo.DynamoNode.chash.find_nodes('K1', 3)
+        Framework.schedule(1)
+        pref_list[1].fail()
+        Framework.schedule()
+        a.get('K1')
+        Framework.schedule()
+        print History.ladder()
+
+    def test_retry_put_fail4(self):
+        for _ in range(6):
+            dynamo.DynamoNode()
+        a = dynamo.DynamoClientNode('a')
+        # Fail the second and third node in the preference list
+        pref_list = dynamo.DynamoNode.chash.find_nodes('K1', 3)
+        a.put('K1', None, 1, destnode=pref_list[0])
+        Framework.schedule(1)
+        pref_list[1].fail()
+        pref_list[2].fail()
+        Framework.schedule()
+        print History.ladder()
+    
 if __name__ == "__main__":
     for ii in range(1, len(sys.argv)-1): # pragma: no cover
         arg = sys.argv[ii]
