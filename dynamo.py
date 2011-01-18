@@ -26,12 +26,18 @@ class DynamoNode(Node):
         self.pending_put_msg = {} # seqno => original client message
         self.pending_get = {} # seqno => set of (node, value, metadata) tuples
         self.pending_get_msg = {} # seqno => original client message
+        self.failed_nodes = set()
         # Rebuild the consistent hash table 
         DynamoNode.nodelist.append(self)
         DynamoNode.chash = ConsistentHashTable(DynamoNode.nodelist, DynamoNode.T)
+# PART rsp_timer_pop
+    def rsp_timer_pop(self, reqmsg):
+        self.failed_nodes.add(reqmsg.to_node)
+        # @@@@ what about in-progress operations
+           
 # PART rcv_clientput
     def rcv_clientput(self, msg):
-        preference_list = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N)
+        preference_list = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N, self.failed_nodes)
         # Determine if we are in the list
         if self not in preference_list:
             # Forward to the coordinator for this key
@@ -60,7 +66,7 @@ class DynamoNode(Node):
                     break
 # PART rcv_clientget
     def rcv_clientget(self, msg):
-        preference_list = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N)
+        preference_list = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N, self.failed_nodes)
         seqno = self.generate_sequence_number()
         self.pending_get[seqno] = set()
         self.pending_get_msg[seqno] = msg

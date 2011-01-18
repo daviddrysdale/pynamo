@@ -33,7 +33,7 @@ This means I can more easily test different scenarios and track what's going on 
 <p>
 For my final proviso, I should point out that I'm not going to explain much of the original ideas in the
 Dynamo paper.  It's a perfectly clear and readable paper, so there's no gain in re-explaining it, except for
-the rare cases where some important details have been swept under the carper.
+the rare cases where some important details have been swept under the carpet.
 </p>
 
 <h3>Contents</h3>
@@ -310,7 +310,18 @@ retries and picks a different node at random.
 </p>
 <div class="highlight"><pre>
 #result <python test_dynamo.py --seed 10 SimpleTestCase.test_client_retry></pre></div>
-
+<p>
+Inside the Dynamo network, each node keeps track of the nodes it believes to be failed.
+</p>
+#diff <dynamo1.py:dynamonode> <dynamo.py:dynamonode>
+<p>
+Failed nodes are avoided in the preference list, both for Put operations:
+</p>
+#diff <dynamo1.py:rcv_clientput> <dynamo.py:rcv_clientput>
+<p>and for Get operations:</p>
+#diff <dynamo1.py:rcv_clientget> <dynamo.py:rcv_clientget>
+<p>A node gets treated as failed when some request to it times out:</p>
+#include <dynamo.py:rsp_timer_pop>
 
 
 ??? node failure
