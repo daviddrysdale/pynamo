@@ -320,8 +320,15 @@ Failed nodes are avoided in the preference list, both for Put operations:
 #diff <dynamo1.py:rcv_clientput> <dynamo.py:rcv_clientput>
 <p>and for Get operations:</p>
 #diff <dynamo1.py:rcv_clientget> <dynamo.py:rcv_clientget>
-<p>A node gets treated as failed when some request to it times out:</p>
+<p>A node gets treated as failed when some request to it times out. To keep the replication factors up to
+  scratch, the timeout code also expands the set of nodes that the original request was sent to.</p>
 #include <dynamo.py:rsp_timer_pop>
+<p>
+With these modifications, the failures shown earlier start to look more recoverable from:
+</p>
+
+
+
 
 
 ??? node failure
@@ -330,8 +337,7 @@ Failed nodes are avoided in the preference list, both for Put operations:
 ??? link failure
 
 ??? multiple node failure
-??? timeouts
-
+??? node recovery
 
 
 <a name="framework"><h2>Appendix: Node Simulation Framework</h2></a>

@@ -33,7 +33,15 @@ class DynamoNode(Node):
 # PART rsp_timer_pop
     def rsp_timer_pop(self, reqmsg):
         self.failed_nodes.add(reqmsg.to_node)
-        # @@@@ what about in-progress operations
+        # Send the request to an additional node by regenerating the preference list
+        preference_list = DynamoNode.chash.find_nodes(reqmsg.key, DynamoNode.N, self.failed_nodes)
+        for node in preference_list:
+            if isinstance(reqmsg, PutReq) and reqmsg.msg_id in self.pending_put:
+                putmsg = PutReq(self, node, reqmsg.key, reqmsg.value, reqmsg.metadata, msg_id=reqmsg.msg_id)
+                Framework.send_message(putmsg)
+            elif isinstance(reqmsg, GetReq) and reqmsg.msg_id in self.pending_get:
+                getmsg = GetReq(self, node, reqmsg.key, msg_id=reqmsg.msg_id)
+                Framework.send_message(getmsg)
            
 # PART rcv_clientput
     def rcv_clientput(self, msg):
