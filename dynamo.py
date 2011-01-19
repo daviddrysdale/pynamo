@@ -12,6 +12,7 @@ from dynamomessages import *
 _logger = logging.getLogger('dynamo')
 # PART dynamonode
 class DynamoNode(Node):
+    timer_priority = 20
     T = 10 # Number of "tokens"/"virtual nodes"/"repeats" in consistent hash table
     N = 3 # Number of nodes to replicate at
     W = 2 # Number of nodes that need to reply to a write operation
@@ -36,6 +37,8 @@ class DynamoNode(Node):
         # Send the request to an additional node by regenerating the preference list
         preference_list = DynamoNode.chash.find_nodes(reqmsg.key, DynamoNode.N, self.failed_nodes)
         for node in preference_list:
+            # @@@ don't send to nodes we've already sent to ... pending_put_req and pending_put_rsp
+            if node == self: continue
             if isinstance(reqmsg, PutReq) and reqmsg.msg_id in self.pending_put:
                 putmsg = PutReq(self, node, reqmsg.key, reqmsg.value, reqmsg.metadata, msg_id=reqmsg.msg_id)
                 Framework.send_message(putmsg)
