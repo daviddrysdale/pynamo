@@ -15,7 +15,7 @@ _logger = logging.getLogger('dynamo')
 class Framework:
     cuts = [] # List of incommunicado sets of nodes
     queue = deque([]) # queue of pending messages
-    pending_timers = {} # request => timer
+    pending_timers = {} # request_message => timer
     
     @classmethod
     def reset(cls):
@@ -39,16 +39,7 @@ class Framework:
         _logger.info("Enqueue %s->%s: %s", msg.from_node, msg.to_node, msg)
         cls.queue.append(msg)
         History.add("send", msg)
-        if isinstance(msg, ResponseMessage):
-            # figure out the original request this is a response to
-            try:
-                reqmsg = msg.response_to.original_msg
-            except Exception:
-                reqmsg = msg.response_to
-            if reqmsg in cls.pending_timers:
-                # Cancel request timer as we've seen a response
-                Timer.cancel_timer(cls.pending_timers[reqmsg])
-                del cls.pending_timers[reqmsg]
+        # Automatically run timers for request messages
         if (expect_reply and
             not isinstance(msg, ResponseMessage) and
             'rsp_timer_pop' in msg.from_node.__class__.__dict__ and
@@ -91,6 +82,17 @@ class Framework:
                     History.add("cut", msg)
                 else:
                     _logger.info("Dequeue %s->%s: %s", msg.from_node, msg.to_node, msg)
+                    if isinstance(msg, ResponseMessage):
+                        # figure out the original request this is a response to
+                        try:
+                            reqmsg = msg.response_to.original_msg
+                        except Exception:
+                            reqmsg = msg.response_to
+                        # cancel any timer associated with the original request
+                        if reqmsg in cls.pending_timers:
+                            # Cancel request timer as we've seen a response
+                            Timer.cancel_timer(cls.pending_timers[reqmsg])
+                            del cls.pending_timers[reqmsg]
                     History.add("deliver", msg)
                     msg.to_node.rcvmsg(msg)
                 msgs_to_process = msgs_to_process - 1
