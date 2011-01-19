@@ -22,9 +22,9 @@ class DynamoNode(Node):
     def __init__(self):
         Node.__init__(self)
         self.store = {} # key => (value, metadata)
-        self.pending_put = {} # seqno => set of nodes that have stored
+        self.pending_put_rsp = {} # seqno => set of nodes that have stored
         self.pending_put_msg = {} # seqno => original client message
-        self.pending_get = {} # seqno => set of (node, value, metadata) tuples
+        self.pending_get_rsp = {} # seqno => set of (node, value, metadata) tuples
         self.pending_get_msg = {} # seqno => original client message
         # Rebuild the consistent hash table 
         DynamoNode.nodelist.append(self)
@@ -46,7 +46,7 @@ class DynamoNode(Node):
             metadata = (self.name, seqno) # For now, metadata is just sequence number at coordinator
             self.store[msg.key] = (msg.value, metadata)
             # Send out to other nodes, and keep track of who has replied
-            self.pending_put[seqno] = set([self])
+            self.pending_put_rsp[seqno] = set([self])
             self.pending_put_msg[seqno] = msg
             reqcount = 1
             for node in preference_list:
@@ -62,7 +62,7 @@ class DynamoNode(Node):
     def rcv_clientget(self, msg):
         preference_list = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N)
         seqno = self.generate_sequence_number()
-        self.pending_get[seqno] = set()
+        self.pending_get_rsp[seqno] = set()
         self.pending_get_msg[seqno] = msg
         reqcount = 0
         for node in preference_list:
@@ -81,13 +81,13 @@ class DynamoNode(Node):
 # PART rcv_putrsp
     def rcv_putrsp(self, putrsp):
         seqno = putrsp.msg_id
-        if seqno in self.pending_put:
-            self.pending_put[seqno].add(putrsp.from_node)
-            if len(self.pending_put[seqno]) >= DynamoNode.W:
+        if seqno in self.pending_put_rsp:
+            self.pending_put_rsp[seqno].add(putrsp.from_node)
+            if len(self.pending_put_rsp[seqno]) >= DynamoNode.W:
                 _logger.info("%s: written %d copies of %s=%s so done", self, DynamoNode.W, putrsp.key, putrsp.value)
-                _logger.debug("  copies at %s", [node.name for node in self.pending_put[seqno]])
+                _logger.debug("  copies at %s", [node.name for node in self.pending_put_rsp[seqno]])
                 original_msg = self.pending_put_msg[seqno]
-                del self.pending_put[seqno]
+                del self.pending_put_rsp[seqno]
                 del self.pending_put_msg[seqno]
                 # Reply to the original client
                 client_putrsp = ClientPutRsp(original_msg)
@@ -104,17 +104,17 @@ class DynamoNode(Node):
 # PART rcv_getrsp
     def rcv_getrsp(self, getrsp):
         seqno = getrsp.msg_id
-        if seqno in self.pending_get:
-            self.pending_get[seqno].add((getrsp.from_node, getrsp.value, getrsp.metadata))
-            if len(self.pending_get[seqno]) >= DynamoNode.R:
+        if seqno in self.pending_get_rsp:
+            self.pending_get_rsp[seqno].add((getrsp.from_node, getrsp.value, getrsp.metadata))
+            if len(self.pending_get_rsp[seqno]) >= DynamoNode.R:
                 _logger.info("%s: read %d copies of %s=? so done", self, DynamoNode.R, getrsp.key)
-                _logger.debug("  copies at %s", [(node.name,value) for (node,value,_) in self.pending_get[seqno]])
+                _logger.debug("  copies at %s", [(node.name,value) for (node,value,_) in self.pending_get_rsp[seqno]])
                 # Build up all the distinct values/metadata values for the response to the original request
                 original_msg = self.pending_get_msg[seqno]
                 results = set()
-                for (node, value, metadata) in self.pending_get[seqno]:
+                for (node, value, metadata) in self.pending_get_rsp[seqno]:
                     results.add((value, metadata))
-                del self.pending_get[seqno]
+                del self.pending_get_rsp[seqno]
                 del self.pending_get_msg[seqno]
                 # Reply to the original client, including all received values
                 client_getrsp = ClientGetRsp(original_msg, 
