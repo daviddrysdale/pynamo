@@ -16,10 +16,8 @@ def _priority(tmsg):
     return priority
 
 class Timer:
-    # List of pending timers, maintained in order of:
-    #   node.timer_priority
-    #   insertion
-    pending = [] 
+    # List of pending timers, maintained in order of priority then insertion
+    pending = [] # list of (priority, tmsg) tuples
 
     @classmethod
     def pending_count(cls):
@@ -30,32 +28,35 @@ class Timer:
         cls.pending = []
 
     @classmethod
-    def start_timer(cls, node, reason=None, callback=None):
+    def start_timer(cls, node, reason=None, callback=None, priority=None):
         """Start a timer for the given node, with an option reason code"""
         tmsg = TimerMessage(node, reason, callback=callback)
         _logger.debug("Start timer %s for node %s reason %s", id(tmsg), node, reason)
         History.add("start", tmsg)
-        priority = _priority(tmsg)
+        if priority is None: # default to priority of the node
+            priority = _priority(tmsg)
         # Figure out where in the list to insert
         for ii in range(len(cls.pending)):
-            if priority > _priority(cls.pending[ii]):
-                cls.pending.insert(ii, tmsg)
+            if priority > cls.pending[ii][0]:
+                cls.pending.insert(ii, (priority, tmsg))
                 return tmsg
-        cls.pending.append(tmsg)
+        cls.pending.append((priority, tmsg))
         return tmsg
     
     @classmethod
     def cancel_timer(cls, tmsg):
         """Cancel the given timer"""
-        if tmsg in cls.pending:
-            _logger.debug("Cancel timer %s for node %s", id(tmsg), tmsg.from_node)
-            cls.pending.remove(tmsg)
-            History.add("cancel", tmsg)
+        for (this_prio, this_tmsg) in cls.pending:
+            if this_tmsg == tmsg:
+                _logger.debug("Cancel timer %s for node %s", id(tmsg), tmsg.from_node)
+                cls.pending.remove((this_prio, this_tmsg))
+                History.add("cancel", tmsg)
+                return
             
     @classmethod
     def pop_timer(cls):
         """Pop the first pending timer"""
-        tmsg = cls.pending.pop(0)
+        (_, tmsg) = cls.pending.pop(0)
         _logger.debug("Pop timer %s for node %s", id(tmsg), tmsg.from_node)
         History.add("pop", tmsg)
         if tmsg.callback is None:
