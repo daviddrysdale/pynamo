@@ -154,7 +154,8 @@ class History:
                     _write_center(this_line, column[msg.from_node], "%s:Start" % msg)
                 pass
             elif action == "pop":
-                _write_center(this_line, column[msg.from_node], "%s:Pop" % msg)
+                if msg.from_node in column:
+                    _write_center(this_line, column[msg.from_node], "%s:Pop" % msg)
             elif action == "cancel":
                 if verbose_timers:
                     _write_center(this_line, column[msg.from_node], "%s:Cancel" % msg)
