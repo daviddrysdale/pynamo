@@ -6,6 +6,7 @@ from framework import Framework, reset
 from history import History
 
 import dynamo1
+import dynamo2
 import dynamo
 
 class SimpleTestCase(unittest.TestCase):
@@ -47,10 +48,10 @@ class SimpleTestCase(unittest.TestCase):
         print History.ladder(spacing=14)
 
     def test_put1_fail_initial_node(self):
-        self.test_put_fail_initial_node(dynamo1)
+        self.put_fail_initial_node(dynamo1)
     def test_put2_fail_initial_node(self):
-        self.test_put_fail_initial_node(dynamo)
-    def test_put_fail_initial_node(self, cls):
+        self.put_fail_initial_node(dynamo)
+    def put_fail_initial_node(self, cls):
         for _ in range(6): cls.DynamoNode()
         a = cls.DynamoClientNode('a')
         destnode = random.choice(cls.DynamoNode.nodelist)
@@ -61,10 +62,10 @@ class SimpleTestCase(unittest.TestCase):
         print History.ladder()
 
     def test_put1_fail_initial_node2(self):
-        self.test_put_fail_initial_node2(dynamo1)
+        self.put_fail_initial_node2(dynamo1)
     def test_put2_fail_initial_node2(self):
-        self.test_put_fail_initial_node2(dynamo)
-    def test_put_fail_initial_node2(self, cls):
+        self.put_fail_initial_node2(dynamo2)
+    def put_fail_initial_node2(self, cls):
         for _ in range(6): dynamo1.DynamoNode()
         a = dynamo1.DynamoClientNode('a')
         destnode = random.choice(dynamo1.DynamoNode.nodelist)
@@ -76,10 +77,10 @@ class SimpleTestCase(unittest.TestCase):
         print History.ladder()
 
     def test_put1_fail_node2(self):
-        self.test_put_fail_node2(dynamo1)
+        self.put_fail_node2(dynamo1)
     def test_put2_fail_node2(self):
-        self.test_put_fail_node2(dynamo)
-    def test_put_fail_node2(self, cls):
+        self.put_fail_node2(dynamo2)
+    def put_fail_node2(self, cls):
         for _ in range(6): cls.DynamoNode()
         a = cls.DynamoClientNode('a')
         a.put('K1', None, 1)
@@ -93,12 +94,12 @@ class SimpleTestCase(unittest.TestCase):
         print History.ladder()
 
     def test_put1_fail_nodes23(self):
-        self.test_put_fail_nodes23(dynamo1)
+        self.put_fail_nodes23(dynamo1)
         print History.ladder()
     def test_put2_fail_nodes23(self):
-        self.test_put_fail_nodes23(dynamo)
+        self.put_fail_nodes23(dynamo2)
         print History.ladder()
-    def test_put_fail_nodes23(self, cls):
+    def put_fail_nodes23(self, cls):
         for _ in range(6): cls.DynamoNode()
         a = cls.DynamoClientNode('a')
         # Fail the second and third node in the preference list
@@ -107,15 +108,31 @@ class SimpleTestCase(unittest.TestCase):
         Framework.schedule(1)
         pref_list[1].fail()
         pref_list[2].fail()
-        Framework.schedule()
+        Framework.schedule(timers_to_process=3)
         return a, pref_list[0]
     
     def test_put2_fail_nodes23_2(self):
-        (a, destnode) = self.test_put_fail_nodes23(dynamo)
+        (a, destnode) = self.put_fail_nodes23(dynamo2)
         from_line = len(History.history)
         a.put('K1', None, 2, destnode=destnode)
         Framework.schedule()
         print History.ladder(start_line=from_line)
+
+    def test_put2_fail_nodes23_3(self):
+        for _ in range(6): dynamo.DynamoNode()
+        a = dynamo.DynamoClientNode('a')
+        # Fail the second and third node in the preference list
+        pref_list = dynamo.DynamoNode.chash.find_nodes('K1', 3)
+        a.put('K1', None, 1, destnode=pref_list[0])
+        Framework.schedule(1, timers_to_process=0)
+        pref_list[1].fail()
+        pref_list[2].fail()
+        Framework.schedule(timers_to_process=2)
+        print History.ladder() # @@
+        return
+        a.put('K1', None, 2, destnode=pref_list[0])
+        Framework.schedule(timers_to_process=3)
+        print History.ladder()
     
 if __name__ == "__main__":
     for ii in range(1, len(sys.argv)-1): # pragma: no cover
