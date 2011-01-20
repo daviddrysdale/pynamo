@@ -6,6 +6,7 @@ import logging
 
 import logconfig
 from node import Node
+from timer import Timer
 from framework import Framework
 from hash_multiple import ConsistentHashTable
 from dynamomessages import *
@@ -29,13 +30,31 @@ class DynamoNode(Node):
         self.pending_get_req = {} # seqno => set of requests sent to other nodes
         self.pending_get_rsp = {} # seqno => set of (node, value, metadata) tuples
         self.pending_get_msg = {} # seqno => original client message
-        self.failed_nodes = set()
+        self.failed_nodes = []
         # Rebuild the consistent hash table 
         DynamoNode.nodelist.append(self)
         DynamoNode.chash = ConsistentHashTable(DynamoNode.nodelist, DynamoNode.T)
+        # Run a timer to retry failed nodes
+        self.retry_failed_node("retry")
+# PART retry_failed_node
+    def retry_failed_node(self, _):
+        if self.failed_nodes: 
+            node = self.failed_nodes.pop(0)
+            # Send a test message
+            pingmsg = PingReq(self, node)
+            Framework.send_message(pingmsg)
+        # Restart the timer
+        Timer.start_timer(self, reason="retry", priority=15, callback=self.retry_failed_node)
+    def rcv_pingreq(self, pingmsg):
+        pingrsp = PingRsp(pingmsg)
+        Framework.send_message(pingrsp)
+    def rcv_pingrsp(self, pingmsg):
+        while pingmsg.from_node in self.failed_nodes:
+            self.failed_nodes.remove(pingrsp.from_node)
 # PART rsp_timer_pop
     def rsp_timer_pop(self, reqmsg):
-        self.failed_nodes.add(reqmsg.to_node)
+        self.failed_nodes.append(reqmsg.to_node)
+        if not isinstance(reqmsg, DynamoRequestMessage): return
         # Send the request to an additional node by regenerating the preference list
         preference_list = DynamoNode.chash.find_nodes(reqmsg.key, DynamoNode.N, self.failed_nodes)
         for node in preference_list:
@@ -161,6 +180,8 @@ class DynamoNode(Node):
         elif isinstance(msg, ClientGet): self.rcv_clientget(msg)
         elif isinstance(msg, GetReq): self.rcv_get(msg)
         elif isinstance(msg, GetRsp): self.rcv_getrsp(msg)
+        elif isinstance(msg, PingReq): self.rcv_pingreq(msg)
+        elif isinstance(msg, PingRsp): self.rcv_pingrsp(msg)
         else: raise TypeError("Unexpected message type %s", msg.__class__)
 # PART get_contents
     def get_contents(self):
