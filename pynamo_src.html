@@ -43,6 +43,10 @@ the rare cases where some important details have been swept under the carpet.
   <li><a href="#simple_put"><code>Put</code>ting It Together</a></li>
   <li><a href="#simple_get">Getting it Back</a></li>
   <li><a href="#failure">Coping With Failure</a></li>
+  <li><a href="#faildetect">Section 4.8.3: Failure Detection</a></li>
+  <li><a href="#failrecover">Failure Recovery</a></li>
+
+
   <li><a href="#framework">Appendix: Node Simulation Framework</a></li>
 </ul>
 
@@ -293,7 +297,7 @@ But if two nodes fail, then we're doomed:
 </p>
 <div class="highlight"><pre>
 #result <python test_dynamo.py --seed 10 SimpleTestCase.test_put1_fail_nodes23></pre></div>
-
+<a name="">
 <p>
 The first step in coping with failure is detecting it.  The framework we're using can automatically start a timer
 for any request message that is sent, and after a suitable period without a response, it can notify the
@@ -310,8 +314,12 @@ retries and picks a different node at random.
 </p>
 <div class="highlight"><pre>
 #result <python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_initial_node></pre></div>
+
+<a name="faildetect"><h2>Section 4.8.3: Failure Detection</h2></a>
 <p>
-Inside the Dynamo network, each node keeps track of the nodes it believes to be failed.
+Inside the Dynamo network, each node keeps track of the requests it has outstanding, and when 
+a request times out the destination node is marked as failed and the request is 
+sent on to additional (hopefully working) nodes.
 </p>
 #diff <dynamo1.py:dynamonode> <dynamo.py:dynamonode>
 <p>
@@ -328,10 +336,16 @@ With these modifications, the failures shown earlier start to look more recovera
 </p>
 <div class="highlight"><pre>
 #result <python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23></pre></div>
+<p>
+A subsequent request for the same key will skip the failed nodes automatically:
+<div class="highlight"><pre>
+#result <python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_2></pre></div>
 
-
-
-
+<a name="failrecover"><h2>Failure Recovery</h2></a>
+<p>
+Of course, nodes that have failed may recover.
+</p>
+??? periodic retry of nodes that have failed
 
 ??? node failure
  - failure of coordinator (1st node in preference list)
@@ -341,6 +355,11 @@ With these modifications, the failures shown earlier start to look more recovera
 ??? multiple node failure
 ??? node recovery
 
+
+??? from here on it's all about engineering around the consequences of failure.  start with individual
+requests -- spot failure.  then operations -- send on to extra nodes.   then worry about recovery.  first how
+to spot it -- periodic retry to failed node.  then how to recover -- resync.  then then consequences of
+failure becoming visible to the client -- vector clocks
 
 <a name="framework"><h2>Appendix: Node Simulation Framework</h2></a>
 
