@@ -47,6 +47,13 @@ class Framework:
             cls.pending_timers[msg] = Timer.start_timer(msg.from_node, reason=msg, callback=Framework.rsp_timer_pop)
 
     @classmethod
+    def remove_req_timer(cls, reqmsg):
+        if reqmsg in cls.pending_timers:
+            # Cancel request timer as we've seen a response
+            Timer.cancel_timer(cls.pending_timers[reqmsg])
+            del cls.pending_timers[reqmsg]
+
+    @classmethod
     def rsp_timer_pop(cls, reqmsg):
         # Remove the record of the pending timer
         del cls.pending_timers[reqmsg]
@@ -89,10 +96,7 @@ class Framework:
                         except Exception:
                             reqmsg = msg.response_to
                         # cancel any timer associated with the original request
-                        if reqmsg in cls.pending_timers:
-                            # Cancel request timer as we've seen a response
-                            Timer.cancel_timer(cls.pending_timers[reqmsg])
-                            del cls.pending_timers[reqmsg]
+                        cls.remove_req_timer(reqmsg)
                     History.add("deliver", msg)
                     msg.to_node.rcvmsg(msg)
                 msgs_to_process = msgs_to_process - 1
