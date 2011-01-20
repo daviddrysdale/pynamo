@@ -86,6 +86,7 @@ class DynamoNode(Node):
             if len(self.pending_put_rsp[seqno]) >= DynamoNode.W:
                 _logger.info("%s: written %d copies of %s=%s so done", self, DynamoNode.W, putrsp.key, putrsp.value)
                 _logger.debug("  copies at %s", [node.name for node in self.pending_put_rsp[seqno]])
+                # Tidy up tracking data structures
                 original_msg = self.pending_put_msg[seqno]
                 del self.pending_put_rsp[seqno]
                 del self.pending_put_msg[seqno]
@@ -110,10 +111,11 @@ class DynamoNode(Node):
                 _logger.info("%s: read %d copies of %s=? so done", self, DynamoNode.R, getrsp.key)
                 _logger.debug("  copies at %s", [(node.name,value) for (node,value,_) in self.pending_get_rsp[seqno]])
                 # Build up all the distinct values/metadata values for the response to the original request
-                original_msg = self.pending_get_msg[seqno]
                 results = set()
                 for (node, value, metadata) in self.pending_get_rsp[seqno]:
                     results.add((value, metadata))
+                # Tidy up tracking data structures
+                original_msg = self.pending_get_msg[seqno]
                 del self.pending_get_rsp[seqno]
                 del self.pending_get_msg[seqno]
                 # Reply to the original client, including all received values
