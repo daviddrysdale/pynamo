@@ -65,3 +65,11 @@ class GetReq(DynamoRequestMessage):
 class GetRsp(DynamoResponseMessage):
     def __str__(self):
         return "GetRsp(%s=%s)" % (self.key, self.value)
+
+class PingReq(Message):
+    def __str__(self):
+        return "PingReq"
+
+class PingRsp(ResponseMessage):
+    def __str__(self):
+        return "PingRsp"
