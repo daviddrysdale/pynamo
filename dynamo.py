@@ -116,7 +116,6 @@ class DynamoNode(Node):
                 _logger.debug("  copies at %s", [node.name for node in self.pending_put_rsp[seqno]])
                 # Tidy up tracking data structures
                 original_msg = self.pending_put_msg[seqno]
-                for req in self.pending_put_req[seqno]: Framework.remove_req_timer(req)
                 del self.pending_put_req[seqno]
                 del self.pending_put_rsp[seqno]
                 del self.pending_put_msg[seqno]
@@ -146,7 +145,6 @@ class DynamoNode(Node):
                     results.add((value, metadata))
                 # Tidy up tracking data structures
                 original_msg = self.pending_get_msg[seqno]
-                for req in self.pending_get_req[seqno]: Framework.remove_req_timer(req)
                 del self.pending_get_req[seqno]
                 del self.pending_get_rsp[seqno]
                 del self.pending_get_msg[seqno]
