@@ -94,8 +94,10 @@ class SimpleTestCase(unittest.TestCase):
 
     def test_put1_fail_nodes23(self):
         self.test_put_fail_nodes23(dynamo1)
+        print History.ladder()
     def test_put2_fail_nodes23(self):
         self.test_put_fail_nodes23(dynamo)
+        print History.ladder()
     def test_put_fail_nodes23(self, cls):
         for _ in range(6): cls.DynamoNode()
         a = cls.DynamoClientNode('a')
@@ -106,8 +108,14 @@ class SimpleTestCase(unittest.TestCase):
         pref_list[1].fail()
         pref_list[2].fail()
         Framework.schedule()
-        print History.ladder()
+        return a, pref_list[0]
     
+    def test_put2_fail_nodes23_2(self):
+        (a, destnode) = self.test_put_fail_nodes23(dynamo)
+        from_line = len(History.history)
+        a.put('K1', None, 2, destnode=destnode)
+        Framework.schedule()
+        print History.ladder(start_line=from_line)
     
 if __name__ == "__main__":
     for ii in range(1, len(sys.argv)-1): # pragma: no cover
