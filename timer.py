@@ -30,6 +30,7 @@ class Timer:
     @classmethod
     def start_timer(cls, node, reason=None, callback=None, priority=None):
         """Start a timer for the given node, with an option reason code"""
+        if node.failed: return None
         tmsg = TimerMessage(node, reason, callback=callback)
         _logger.debug("Start timer %s for node %s reason %s", id(tmsg), node, reason)
         History.add("start", tmsg)
@@ -48,7 +49,7 @@ class Timer:
         """Cancel the given timer"""
         for (this_prio, this_tmsg) in cls.pending:
             if this_tmsg == tmsg:
-                _logger.debug("Cancel timer %s for node %s", id(tmsg), tmsg.from_node)
+                _logger.debug("Cancel timer %s for node %s reason %s", id(tmsg), tmsg.from_node, tmsg.reason)
                 cls.pending.remove((this_prio, this_tmsg))
                 History.add("cancel", tmsg)
                 return
@@ -56,12 +57,14 @@ class Timer:
     @classmethod
     def pop_timer(cls):
         """Pop the first pending timer"""
-        (_, tmsg) = cls.pending.pop(0)
-        _logger.debug("Pop timer %s for node %s", id(tmsg), tmsg.from_node)
-        History.add("pop", tmsg)
-        if tmsg.callback is None:
-            # Default to calling Node.timer_pop()
-            tmsg.from_node.timer_pop(tmsg.reason)
-        else:
-            tmsg.callback(tmsg.reason)
+        while True:
+            (_, tmsg) = cls.pending.pop(0)
+            if tmsg.from_node.failed: continue
+            _logger.debug("Pop timer %s for node %s reason %s", id(tmsg), tmsg.from_node, tmsg.reason)
+            History.add("pop", tmsg)
+            if tmsg.callback is None:
+                # Default to calling Node.timer_pop()
+                tmsg.from_node.timer_pop(tmsg.reason)
+            else:
+                tmsg.callback(tmsg.reason)
 
