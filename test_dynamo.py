@@ -7,7 +7,7 @@ from history import History
 
 import dynamo1
 import dynamo2
-import dynamo
+import dynamo as dynamo99
 
 class SimpleTestCase(unittest.TestCase):
     """Test simple Dynamo function"""
@@ -15,7 +15,7 @@ class SimpleTestCase(unittest.TestCase):
         reset()
 
     def tearDown(self):
-        pass
+        reset()
 
     def test_simple_put(self):
         for _ in range(6):
@@ -50,7 +50,7 @@ class SimpleTestCase(unittest.TestCase):
     def test_put1_fail_initial_node(self):
         self.put_fail_initial_node(dynamo1)
     def test_put2_fail_initial_node(self):
-        self.put_fail_initial_node(dynamo)
+        self.put_fail_initial_node(dynamo2)
     def put_fail_initial_node(self, cls):
         for _ in range(6): cls.DynamoNode()
         a = cls.DynamoClientNode('a')
@@ -98,7 +98,9 @@ class SimpleTestCase(unittest.TestCase):
         print History.ladder()
     def test_put2_fail_nodes23(self):
         self.put_fail_nodes23(dynamo2)
-        print History.ladder()
+        # Force nodes that are of interest in put2_fail_nodes23_2 to be included in the history
+        pref_list = dynamo2.DynamoNode.chash.find_nodes('K1', 5)
+        print History.ladder(force_include=pref_list)
     def put_fail_nodes23(self, cls):
         for _ in range(6): cls.DynamoNode()
         a = cls.DynamoClientNode('a')
@@ -108,7 +110,7 @@ class SimpleTestCase(unittest.TestCase):
         Framework.schedule(1)
         pref_list[1].fail()
         pref_list[2].fail()
-        Framework.schedule(timers_to_process=3)
+        Framework.schedule(timers_to_process=2)
         return a, pref_list[0]
     
     def test_put2_fail_nodes23_2(self):
@@ -119,10 +121,10 @@ class SimpleTestCase(unittest.TestCase):
         print History.ladder(start_line=from_line)
 
     def test_put2_fail_nodes23_3(self):
-        for _ in range(6): dynamo.DynamoNode()
-        a = dynamo.DynamoClientNode('a')
+        for _ in range(6): dynamo99.DynamoNode()
+        a = dynamo99.DynamoClientNode('a')
         # Fail the second and third node in the preference list
-        pref_list = dynamo.DynamoNode.chash.find_nodes('K1', 3)
+        pref_list = dynamo99.DynamoNode.chash.find_nodes('K1', 3)
         a.put('K1', None, 1, destnode=pref_list[0])
         Framework.schedule(1, timers_to_process=0)
         pref_list[1].fail()
