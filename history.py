@@ -36,7 +36,7 @@ class History:
         cls.history.append((action, obj))
 
     @classmethod
-    def nodelist(cls):
+    def nodelist(cls, force_include=None):
         """Return a list of all nodes involved in the history"""
         nodeset = set()
         for (action, msg) in cls.history:
@@ -44,15 +44,18 @@ class History:
                 # Every message must be sent, so just look at send actions
                 nodeset.add(msg.from_node)
                 nodeset.add(msg.to_node)
+        if force_include is not None:
+            for node in force_include:
+                nodeset.add(node)
         nodelist = list(nodeset)
         nodelist.sort(key=lambda x:x.name)
         return nodelist
 
     @classmethod
-    def ladder(cls, spacing=20, verbose_timers=False, start_line=0):
+    def ladder(cls, spacing=20, verbose_timers=False, start_line=0, force_include=None):
         """Generate the ladder diagram for a message history"""
         # First spin through all of the message history to find the set of Nodes involved
-        nodelist = cls.nodelist()
+        nodelist = cls.nodelist(force_include)
         num_nodes = len(nodelist)
         included_nodes = set()
     
@@ -160,11 +163,13 @@ class History:
                 if verbose_timers:
                     _write_center(this_line, column[msg.from_node], "%s:Cancel" % msg)
             elif action == "fail":
-                _write_center(this_line, column[msg.from_node], "FAIL")
-                failed_nodes.add(msg.from_node)
+                if msg.from_node in column:
+                    _write_center(this_line, column[msg.from_node], "FAIL")
+                    failed_nodes.add(msg.from_node)
             elif action == "recover":
-                _write_center(this_line, column[msg.from_node], "RECOVER")
-                failed_nodes.remove(msg.from_node)
+                if msg.from_node in column:
+                    _write_center(this_line, column[msg.from_node], "RECOVER")
+                    failed_nodes.remove(msg.from_node)
             elif action == "remove":
                 included_nodes.remove(msg.from_node)
                 continue # don't emit a line
