@@ -67,4 +67,5 @@ class Timer:
                 tmsg.from_node.timer_pop(tmsg.reason)
             else:
                 tmsg.callback(tmsg.reason)
+            return
 
