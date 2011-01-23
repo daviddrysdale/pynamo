@@ -343,9 +343,24 @@ A subsequent request for the same key will skip the failed nodes automatically:
 
 <a name="failrecover"><h2>Failure Recovery</h2></a>
 <p>
-Of course, nodes that have failed may recover.
+Of course, nodes that have failed may recover.  To keep an eye out for this, we periodically check a node
+that has failed to see if it has recovered.
 </p>
-??? periodic retry of nodes that have failed
+#include <dynamo.py:retry_failed_node>
+<p>
+This <b>Ping</b> request will mostly fail, which will keep the node on the failed list.
+</p>
+<div class="highlight"><pre>
+#result <python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_3></pre></div>
+<p>
+But once a node recovers, some <b>Ping</b> will eventually succeed and then a subsequent Put request 
+will return to using the original preference list.
+</p>
+<div class="highlight"><pre>
+#result <python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_4></pre></div>
+
+
+
 
 ??? node failure
  - failure of coordinator (1st node in preference list)
@@ -390,12 +405,6 @@ of the license is available
 <p><a href="http://www.lurklurk.org/">Back to Home Page</a></p>
 <hr>
 <p><a href="mailto:dmd at_sign_here lurklurk dot_here org">Contact me</a></p>
-<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
-</script>
-<script type="text/javascript">
-_uacct = "UA-707535-2";
-urchinTracker();
-</script>
 </body>
 </html>
 
