@@ -35,11 +35,16 @@ For my final proviso, I should point out that I'm not going to explain much of t
 Dynamo paper.  It's a perfectly clear and readable paper, so there's no gain in re-explaining it, except for
 the rare cases where some important details have been swept under the carpet.
 </p>
+<p>
+Structurally, we'll start by exploring some of the building blocks used in the design, then start building up
+the Dynamo software step by step.
+</p>
 
 <h3>Contents</h3>
 <ul>
   <li><a href="#consistent_hash">Keyspace Partitioning Algorithm (Section 4.2/4.3)</a></li>
   <li><a href="#vector_clock">Vector Clocks (Section 4.4)</a></li>
+  <li><a href="#merkle">Merkle Trees (Section 4.7)</a></li>
   <li><a href="#simple_put"><b>Put</b>ting It Together</a></li>
   <li><a href="#simple_get"><b>Get</b>ting it Back</a></li>
   <li><a href="#failure">Coping With Failure</a></li>
@@ -196,6 +201,9 @@ won't bother using this variant from here on.
 </p>
 #include <vectorclockt.py>
 
+<a name="merkle"><h2>Merkle Trees</h2></a>
+
+???
 <a name="simple_put"><h2><b>Put</b>ting It Together</h2></a>
 <p>
 Now we're going to start to put everything together.  We're going to build on a simulated enviroment of 
