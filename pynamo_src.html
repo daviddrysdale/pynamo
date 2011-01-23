@@ -38,20 +38,23 @@ the rare cases where some important details have been swept under the carpet.
 
 <h3>Contents</h3>
 <ul>
-  <li><a href="#consistent_hash">Section 4.2/4.3: Partitioning Algorithm</a></li>
-  <li><a href="#vector_clock">Section 4.4: Vector Clocks</a></li>
-  <li><a href="#simple_put"><code>Put</code>ting It Together</a></li>
-  <li><a href="#simple_get">Getting it Back</a></li>
+  <li><a href="#consistent_hash">Keyspace Partitioning Algorithm (Section 4.2/4.3)</a></li>
+  <li><a href="#vector_clock">Vector Clocks (Section 4.4)</a></li>
+  <li><a href="#simple_put"><b>Put</b>ting It Together</a></li>
+  <li><a href="#simple_get"><b>Get</b>ting it Back</a></li>
   <li><a href="#failure">Coping With Failure</a></li>
-  <li><a href="#faildetect">Section 4.8.3: Failure Detection</a></li>
+  <li><a href="#faildetect">Failure Detection (Section 4.8.3)</a></li>
   <li><a href="#failrecover">Failure Recovery</a></li>
-
+  <li><a href="#catchup">Catchup</a></li>
+  <li><a href="#divergence">Detecting Divergence</a></li>
+  <li><a href="#divergence_repair">Repairing Divergence</a></li>
+  <li><a href="#other_errors">Other Error Cases</a></li>
 
   <li><a href="#framework">Appendix: Node Simulation Framework</a></li>
 </ul>
 
 
-<a name="consistent_hash"><h2>Section 4.2/4.3: Partitioning Algorithm</h2></a>
+<a name="consistent_hash"><h2>Partitioning Algorithm (Section 4.2/4.3)</h2></a>
 <p>
 The first area to explore is the consistent hashing algorithm described in section 4.2 of the paper.
 The constructor for the <code>ConsistentHashTable</code> builds up the list of nodes, and the 
@@ -103,7 +106,7 @@ For 50 nodes with <b>100</b> copies of each node in the hash ring.
 </ul>
 
 
-<a name="vector_clock"><h2>Section 4.4: Vector Clocks</h2></a>
+<a name="vector_clock"><h2>Vector Clocks (Section 4.4)</h2></a>
 <p>
 A vector clock is easy to implement; it's basically a dictionary whose keys are nodes
 and whose values are the last-seen sequence number for that node.
@@ -193,7 +196,7 @@ won't bother using this variant from here on.
 </p>
 #include <vectorclockt.py>
 
-<a name="simple_put"><h2><code>Put</code>ting It Together</h2></a>
+<a name="simple_put"><h2><b>Put</b>ting It Together</h2></a>
 <p>
 Now we're going to start to put everything together.  We're going to build on a simulated enviroment of 
 nodes and messages between them, which allows testing and simulation.  The framework is described in more detail in
@@ -245,21 +248,21 @@ has had <b>W</b> total replies (including itself), the <code>put()</code> operat
 #include <dynamo1.py:rcv_putrsp>
 <p>
 We can see an example of the whole process as a ladder diagram. Notice that the response goes back to the
-client before the final <b>Put</b> response arrives &ndash; the <b>N</b> parameter is 3, so the Put request is
+client before the final <b>Put</b> response arrives &ndash; the <b>N</b> parameter is 3, so the <b>Put</b> request is
 processed by 3 nodes, but the <b>W</b> parameter is only 2 and so the final response isn't needed for the
 process to complete.
 </p>
 <div class="highlight"><pre>
 #result <python test_dynamo.py --seed 10 SimpleTestCase.test_simple_put></pre></div>
 <p>
-Interspersing Put operations for two different keys, from two different clients makes the ladder diagram more
+Interspersing <b>Put</b> operations for two different keys, from two different clients makes the ladder diagram more
 complicated, but the underlying details are the same.
 </p>
 <div class="highlight"><pre>
 #result <python test_dynamo.py --seed 10 SimpleTestCase.test_double_put></pre></div>
 
 
-<a name="simple_get"><h2>Getting it Back</h2></a>
+<a name="simple_get"><h2><b>Get</b>ting it Back</h2></a>
 <p>
 After seeing the <b>Put</b> infrastructure, the <b>Get</b> infrastructure is pretty straightforward.  The main
 difference here is that whichever node first receives the client request coordinates the whole business,
@@ -315,7 +318,7 @@ Almost everything we still need to add to the code is about engineering around t
 </ul>
 </p>
 
-<a name="faildetect"><h2>Section 4.8.3: Failure Detection</h2></a>
+<a name="faildetect"><h2>Failure Detection (Section 4.8.3)</h2></a>
 <p>
 The first step in coping with failure is detecting it.  The framework we're using can automatically start a timer
 for any request message that is sent, and after a suitable period without a response, it can notify the
@@ -340,10 +343,10 @@ sent on to additional (hopefully working) nodes.
 </p>
 #diff <dynamo1.py:dynamonode> <dynamo.py:dynamonode>
 <p>
-Failed nodes are avoided in the preference list, both for Put operations:
+Failed nodes are avoided in the preference list, both for <b>Put</b> operations:
 </p>
 #diff <dynamo1.py:rcv_clientput> <dynamo.py:rcv_clientput>
-<p>and for Get operations:</p>
+<p>and for <b>Get</b> operations:</p>
 #diff <dynamo1.py:rcv_clientget> <dynamo.py:rcv_clientget>
 <p>A node gets treated as failed when some request to it times out. To keep the replication factors up to
   scratch, the timeout code also expands the set of nodes that the original request was sent to.</p>
@@ -365,28 +368,40 @@ that has failed to see if it has recovered.
 </p>
 #include <dynamo.py:retry_failed_node>
 <p>
-This <b>Ping</b> request will mostly fail, which will keep the node on the failed list.
+This <b>Ping</b> request will likely fail at first, which will keep the node on the failed list.
 </p>
 <div class="highlight"><pre>
 #result <python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_3></pre></div>
 <p>
-But once a node recovers, some <b>Ping</b> will eventually succeed and then a subsequent Put request 
+But once a node recovers, some <b>Ping</b> will eventually succeed and then a subsequent <b>Put</b> request 
 will return to using the original preference list.
 </p>
 <div class="highlight"><pre>
 #result <python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_4></pre></div>
 
+<a name="catchup"><h2>Catchup</h2></a>
+<p>
+???
 
 
+<a name="divergence"><h2>Detecting Divergence</h2></a>
+<p>
+Of course, it's not just nodes that can fail &ndash; sometimes, the links between them fail too.  The worst
+scenario that this leads to is <i>network partition</i>: half of the network is on one side of the partition,
+the other half is on the other side, and never the twain shall meet.  
+</p>
+???scenario with link failures leading to partition
+<p>
+Network partitions are particularly bad because different clients can update keys on the either side of the
+partition, resulting in different, incompatible, values for the keys.  Once the partition is repaired, what's
+do be done about the inconsistent values?
+</p>
+???
+<a name="divergence_repair"><h2>Repairing Divergence</h2></a>
+???
 
-
-
-??? node failure
- - failure of coordinator (1st node in preference list)
-??? link failure
-??? multiple node failure
-??? node recovery
-
+<a name="other_errors"><h2>Other Error Cases</h2></a>
+??? failure of coordinator (1st node in preference list) on <b>Put</b> request
 
 
 <a name="framework"><h2>Appendix: Node Simulation Framework</h2></a>
