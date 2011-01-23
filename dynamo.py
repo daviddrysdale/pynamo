@@ -23,7 +23,7 @@ class DynamoNode(Node):
 
     def __init__(self):
         Node.__init__(self)
-        self.store = {} # key => (value, metadata)
+        self.local_store = {} # key => (value, metadata)
         self.pending_put_req = {} # seqno => set of requests sent to other nodes
         self.pending_put_rsp = {} # seqno => set of nodes that have stored
         self.pending_put_msg = {} # seqno => original client message
@@ -38,10 +38,10 @@ class DynamoNode(Node):
         self.retry_failed_node("retry")
 # PART storage
     def store(key, value, metadata):
-        self.store[key] = (value, metadata)
+        self.local_store[key] = (value, metadata)
     def retrieve(key):
-        if key in self.store:
-            return self.store[key]
+        if key in self.local_store:
+            return self.local_store[key]
         else:
             return (None, None)
 # PART retry_failed_node
@@ -194,7 +194,7 @@ class DynamoNode(Node):
 # PART get_contents
     def get_contents(self):
         results = []
-        for key,value in self.store.items():
+        for key,value in self.local_store.items():
             results.append("%s:%s" % (key,value[0]))
         return results
 # PART clientnode
