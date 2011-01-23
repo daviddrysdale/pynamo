@@ -78,7 +78,8 @@ class History:
         lineno = 0
     
         # Step through all of the actions
-        for action, msg in cls.history:
+        for ii in range(len(cls.history)):
+            action, msg = cls.history[ii]
             lineno = lineno + 1
             # First, build up a line with the current set of vertical lines and leaders
             this_line = [' ' for jj in xrange(linelen)]
@@ -157,7 +158,10 @@ class History:
                     _write_center(this_line, column[msg.from_node], "%s:Start" % msg)
                 pass
             elif action == "pop":
-                if msg.from_node in column:
+                # In non-verbose mode, only display a timer pop if it looks like it
+                # produced some activity.
+                if ((ii+1 < len(cls.history) and cls.history[ii+1][0] == "send") or
+                    verbose_timers):
                     _write_center(this_line, column[msg.from_node], "%s:Pop" % msg)
             elif action == "cancel":
                 if verbose_timers:
