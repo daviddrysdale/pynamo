@@ -33,6 +33,14 @@ class DynamoNode(Node):
         # Rebuild the consistent hash table 
         DynamoNode.nodelist.append(self)
         DynamoNode.chash = ConsistentHashTable(DynamoNode.nodelist, DynamoNode.T)
+# PART storage
+    def store(key, value, metadata):
+        self.store[key] = (value, metadata)
+    def retrieve(key):
+        if key in self.store:
+            return self.store[key]
+        else:
+            return (None, None)
 # PART rsp_timer_pop
     def rsp_timer_pop(self, reqmsg):
         self.failed_nodes.append(reqmsg.to_node)
@@ -68,7 +76,7 @@ class DynamoNode(Node):
             seqno = self.generate_sequence_number()
             _logger.info("%s, %d: store %s=%s", self, seqno, msg.key, msg.value)
             metadata = (self.name, seqno) # For now, metadata is just sequence number at coordinator
-            self.store[msg.key] = (msg.value, metadata)
+            self.store(msg.key, msg.value, metadata)
             # Send out to other nodes, and keep track of who has replied
             self.pending_put_req[seqno] = set()
             self.pending_put_rsp[seqno] = set([self])
@@ -103,7 +111,7 @@ class DynamoNode(Node):
 # PART rcv_put
     def rcv_put(self, putmsg):
         _logger.info("%s: store %s=%s", self, putmsg.key, putmsg.value)
-        self.store[putmsg.key] = (putmsg.value, putmsg.metadata)
+        self.store(putmsg.key, putmsg.value, putmsg.metadata)
         putrsp = PutRsp(putmsg)
         Framework.send_message(putrsp)
 # PART rcv_putrsp
@@ -127,8 +135,8 @@ class DynamoNode(Node):
 # PART rcv_get
     def rcv_get(self, getmsg):
         _logger.info("%s: retrieve %s=?", self, getmsg.key)
-        if getmsg.key in self.store:
-            (value, metadata) = self.store[getmsg.key]
+        (value, metadata) = self.retrieve(key)
+        if value is not None:
             getrsp = GetRsp(getmsg, value, metadata)
             Framework.send_message(getrsp)
 # PART rcv_getrsp
