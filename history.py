@@ -156,24 +156,33 @@ class History:
             elif action == "start":
                 if verbose_timers:
                     _write_center(this_line, column[msg.from_node], "%s:Start" % msg)
-                pass
+                else:
+                    continue
             elif action == "pop":
                 # In non-verbose mode, only display a timer pop if it looks like it
                 # produced some activity.
                 if ((ii+1 < len(cls.history) and cls.history[ii+1][0] == "send") or
                     verbose_timers):
                     _write_center(this_line, column[msg.from_node], "%s:Pop" % msg)
+                else:
+                    continue
             elif action == "cancel":
                 if verbose_timers:
                     _write_center(this_line, column[msg.from_node], "%s:Cancel" % msg)
+                else:
+                    continue
             elif action == "fail":
                 if msg.from_node in column:
                     _write_center(this_line, column[msg.from_node], "FAIL")
                     failed_nodes.add(msg.from_node)
+                else:
+                    continue
             elif action == "recover":
                 if msg.from_node in column:
                     _write_center(this_line, column[msg.from_node], "RECOVER")
                     failed_nodes.remove(msg.from_node)
+                else:
+                    continue
             elif action == "remove":
                 included_nodes.remove(msg.from_node)
                 continue # don't emit a line
