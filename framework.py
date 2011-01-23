@@ -78,8 +78,8 @@ class Framework:
         if timers_to_process is None: timers_to_process = 32768
         
         while cls._work_to_do():
-            _logger.info("Start of schedule: %d pending messages, %d pending timers",
-                         len(cls.queue), Timer.pending_count())
+            _logger.info("Start of schedule: %d (limit %d) pending messages, %d (limit %d) pending timers",
+                         len(cls.queue), msgs_to_process, Timer.pending_count(), timers_to_process)
             # Process all the queued up messages (which may enqueue more along the way)
             while cls.queue:
                 msg = cls.queue.popleft()
@@ -109,7 +109,7 @@ class Framework:
                 # Pop the first pending timer; this may enqueue work
                 Timer.pop_timer()
                 timers_to_process = timers_to_process - 1
-                if timers_to_process == 0: return
+            if timers_to_process == 0: return
 
     @classmethod
     def _work_to_do(cls):
