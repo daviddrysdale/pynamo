@@ -124,6 +124,9 @@ class SimpleTestCase(unittest.TestCase):
     def test_put2_fail_nodes23_3(self):
         """Show PingReq failing"""
         (a, pref_list) = self.put_fail_nodes23(dynamo99)
+        destnode = pref_list[0]
+        a.put('K1', None, 2, destnode=destnode)
+        Framework.schedule(timers_to_process=0)
         from_line = len(History.history)
         Framework.schedule(timers_to_process=3) 
         print History.ladder(force_include=pref_list, start_line=from_line)
