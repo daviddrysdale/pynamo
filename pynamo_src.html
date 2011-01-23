@@ -299,6 +299,24 @@ But if two nodes fail, then we're doomed:
 #result <python test_dynamo.py --seed 10 SimpleTestCase.test_put1_fail_nodes23></pre></div>
 <a name="">
 <p>
+Almost everything we still need to add to the code is about engineering around the consequences of failures:
+<ul>
+ <li><b>Failure Detection</b>: To begin with, we need to be able to spot failed nodes.</li>
+ <li><b>Expanded Preference Lists</b>: Once a failed node has been spotted, we need to extend the replication
+ set to cope.</li>
+ <li><b>Failure Recovery Detection</b>: A failed node can recover, and we need some way to detect this.</li>
+ <li><b>Catchup</b>: When a node recovers after a failure, it is out-of-sync and needs to catch up with the
+   rest of the network.</li>
+ <li><b>Detecting Divergence</b>: If a failure (particularly a network partition) resulted in the values for a
+ particular key having inconsistent values, we need to detect this, using the vector clocks 
+   <a href="#vector_clock">described above</a>.</li>
+ <li><b>Repairing Divergence</b>: Once the values for a key have diverged, the Dynamo network isn't able to
+ figure out how to repair the divergence itself, and so it has to push the problem up to the client software.</li>
+</ul>
+</p>
+
+<a name="faildetect"><h2>Section 4.8.3: Failure Detection</h2></a>
+<p>
 The first step in coping with failure is detecting it.  The framework we're using can automatically start a timer
 for any request message that is sent, and after a suitable period without a response, it can notify the
 original sender of the failure.  To use this facility, the sender just needs to include a 
@@ -315,7 +333,6 @@ retries and picks a different node at random.
 <div class="highlight"><pre>
 #result <python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_initial_node></pre></div>
 
-<a name="faildetect"><h2>Section 4.8.3: Failure Detection</h2></a>
 <p>
 Inside the Dynamo network, each node keeps track of the requests it has outstanding, and when 
 a request times out the destination node is marked as failed and the request is 
@@ -341,7 +358,7 @@ A subsequent request for the same key will skip the failed nodes automatically:
 <div class="highlight"><pre>
 #result <python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_2></pre></div>
 
-<a name="failrecover"><h2>Failure Recovery</h2></a>
+<a name="failrecover"><h2>Failure Recovery Detection</h2></a>
 <p>
 Of course, nodes that have failed may recover.  To keep an eye out for this, we periodically check a node
 that has failed to see if it has recovered.
@@ -362,19 +379,15 @@ will return to using the original preference list.
 
 
 
+
+
 ??? node failure
  - failure of coordinator (1st node in preference list)
-
 ??? link failure
-
 ??? multiple node failure
 ??? node recovery
 
 
-??? from here on it's all about engineering around the consequences of failure.  start with individual
-requests -- spot failure.  then operations -- send on to extra nodes.   then worry about recovery.  first how
-to spot it -- periodic retry to failed node.  then how to recover -- resync.  then then consequences of
-failure becoming visible to the client -- vector clocks
 
 <a name="framework"><h2>Appendix: Node Simulation Framework</h2></a>
 
