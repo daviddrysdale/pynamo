@@ -220,11 +220,18 @@ and <b>R</b> parameters described in section 4.5 of the paper.  The class also k
 </p>
 #include <dynamo1.py:dynamonode>
 <p>
-Each instance of <code>DynamoNode</code> has some attributes of its own.  The <code>store</code> attribute is
-a Python dictionary that simulates the node's local data store; this is where the key/value pairs stored by
-the system end up.  There are also a <code>pending_put</code> and <code>pending_get</code> data structures
+Each instance of <code>DynamoNode</code> has some attributes of its own.  The <code>local_store</code>
+attribute is a Python dictionary that simulates the node's local data store; this is where the key/value
+pairs stored by the system end up.
+There are also a <code>pending_put</code> and <code>pending_get</code> data structures
 that keep track of pending operations being coordinated by this node.
 </p>
+<p>
+Access to the local data store <code>local_store</code> is via the <code>store()</code>
+and <code>retrieve()</code> methods; this will allow us to substitute in more sophisticated functionality
+later. 
+</p>
+#include <dynamo1.py:storage>
 <p>
 So what happens when a client tries to <code>put()</code> a piece of data?  The initial request message will
 arrive at a random Dynamo node, and its first action is to figure out the <i>preference list</i>.  
