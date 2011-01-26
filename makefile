@@ -6,7 +6,7 @@ INCLUDED_PY_FILES=hash_simple.py hash_multiple.py vectorclock.py vectorclockt.py
 TEST_FILES=hash_simple.py hash_multiple.py vectorclock.py vectorclockt.py test_put.py test_get.py
 # All files
 ALL_PY_FILES=$(wildcard *.py)
-ALL_FILES=makefile preprocess pynamo_src.html $(ALL_PY_FILES)
+ALL_FILES=makefile preprocess pynamo_src.html pygments.css $(ALL_PY_FILES)
 
 
 all: pynamo.html tar
