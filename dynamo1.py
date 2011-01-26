@@ -30,9 +30,9 @@ class DynamoNode(Node):
         DynamoNode.nodelist.append(self)
         DynamoNode.chash = ConsistentHashTable(DynamoNode.nodelist, DynamoNode.T)
 # PART storage
-    def store(key, value, metadata):
+    def store(self, key, value, metadata):
         self.local_store[key] = (value, metadata)
-    def retrieve(key):
+    def retrieve(self, key):
         if key in self.local_store:
             return self.local_store[key]
         else:
