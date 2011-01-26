@@ -9,7 +9,7 @@ ALL_PY_FILES=$(wildcard *.py)
 ALL_FILES=makefile preprocess pynamo_src.html $(ALL_PY_FILES)
 
 
-all: pynamo.html 
+all: pynamo.html tar
 
 pynamo.html: preprocess pynamo_src.html $(INCLUDED_PY_FILES) pynamo.tgz
 	preprocess pynamo_src.html > $@
