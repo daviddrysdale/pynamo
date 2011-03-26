@@ -1,3 +1,4 @@
+"""Utility functions for testing"""
 import math
 import random
 

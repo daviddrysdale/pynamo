@@ -1,5 +1,4 @@
 """Timer functionality"""
-
 import logging
 
 from message import TimerMessage

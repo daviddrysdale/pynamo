@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Minimal Merkle Tree implementation in Python"""
 import hashlib
 
