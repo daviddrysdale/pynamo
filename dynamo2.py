@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-"""Implementation of Dynamo"""
+"""Dynamo implementation in Python"""
 import sys
 import random
 import logging

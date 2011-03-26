@@ -1,4 +1,4 @@
-
+"""Minimal Merkle Tree implementation in Python"""
 import hashlib
 
 def extract_subrange(min_key, max_key, keystore):

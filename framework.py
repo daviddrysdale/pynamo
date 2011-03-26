@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+"""Framework code for simulating networks"""
 import sys
 import copy
 import logging

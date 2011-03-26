@@ -1,3 +1,4 @@
+"""Messages between Dynamo nodes"""
 from message import Message, ResponseMessage
 
 class DynamoRequestMessage(Message):

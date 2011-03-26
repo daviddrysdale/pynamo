@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Implementation of Dynamo"""
 import sys
 import random
