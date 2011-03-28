@@ -1,4 +1,4 @@
-"""Code to implement a Node in an arbitrary network"""
+"""Python code implementing a Node in an arbitrary network"""
 import logging
 from history import History
 from message import NodeAction
