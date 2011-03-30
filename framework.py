@@ -1,5 +1,4 @@
 """Framework code for simulating networks"""
-import sys
 import copy
 import logging
 from collections import deque
@@ -19,8 +18,8 @@ class Framework:
     
     @classmethod
     def reset(cls):
-        cuts = []
-        queue = deque()
+        cls.cuts = []
+        cls.queue = deque()
 
     @classmethod
     def cut_wires(cls, from_nodes, to_nodes):

@@ -102,6 +102,7 @@ class MerkleTestCase(unittest.TestCase):
         # MD5 values are 128-bit; convert to long
         x = MerkleTree(3, self.min_key, self.max_key, self.keystore) 
         xs = str(x)
+        return xs
 
     def testCompare(self):
         keystore2 = copy.copy(self.keystore)

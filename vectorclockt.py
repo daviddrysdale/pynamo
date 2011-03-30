@@ -11,7 +11,7 @@ class VectorClockTimestamp(VectorClock):
         self.clock_time = {} # node => timestamp
     
     def _maybe_truncate(self):
-        if len(self.clock_time) < NODE_LIMIT:
+        if len(self.clock_time) < VectorClockTimestamp.NODE_LIMIT:
             return
         # Find the oldest entry
         oldest_node = None
@@ -37,8 +37,7 @@ class VectorClockTimestampTestCase(unittest.TestCase):
     """Test vector clock class"""
 
     def setUp(self):
-        global NODE_LIMIT
-        NODE_LIMIT = 3
+        VectorClockTimestamp.NODE_LIMIT = 3
         self.c1 = VectorClockTimestamp()
         self.c1.update('A', 1)
         self.c2 = VectorClockTimestamp()

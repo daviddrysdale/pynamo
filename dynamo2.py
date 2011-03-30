@@ -1,5 +1,4 @@
 """Dynamo implementation in Python"""
-import sys
 import random
 import logging
 

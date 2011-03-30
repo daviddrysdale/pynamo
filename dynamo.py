@@ -1,5 +1,4 @@
 """Implementation of Dynamo"""
-import sys
 import random
 import logging
 
