@@ -7,8 +7,13 @@ from node import Node
 from timer import Timer
 from framework import Framework
 from hash_multiple import ConsistentHashTable
-from dynamomessages import *
+from dynamomessages import ClientPut, ClientGet, ClientPutRsp, ClientGetRsp
+from dynamomessages import PutReq, GetReq, PutRsp, GetRsp
+from dynamomessages import PingReq, PingRsp, DynamoRequestMessage
+
+logconfig.init_logging()
 _logger = logging.getLogger('dynamo')
+
 # PART dynamonode
 class DynamoNode(Node):
     timer_priority = 20
@@ -56,7 +61,7 @@ class DynamoNode(Node):
         Framework.send_message(pingrsp)
     def rcv_pingrsp(self, pingmsg):
         while pingmsg.from_node in self.failed_nodes:
-            self.failed_nodes.remove(pingrsp.from_node)
+            self.failed_nodes.remove(pingmsg.from_node)
 # PART rsp_timer_pop
     def rsp_timer_pop(self, reqmsg):
         self.failed_nodes.append(reqmsg.to_node)

@@ -6,8 +6,12 @@ import logconfig
 from node import Node
 from framework import Framework
 from hash_multiple import ConsistentHashTable
-from dynamomessages import *
+from dynamomessages import ClientPut, ClientGet, ClientPutRsp, ClientGetRsp
+from dynamomessages import PutReq, GetReq, PutRsp, GetRsp
+
+logconfig.init_logging()
 _logger = logging.getLogger('dynamo')
+
 # PART dynamonode
 class DynamoNode(Node):
     T = 10 # Number of "tokens"/"virtual nodes"/"repeats" in consistent hash table

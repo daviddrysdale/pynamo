@@ -9,6 +9,7 @@ from timer import Timer
 from message import ResponseMessage
 import logconfig
 
+logconfig.init_logging()
 _logger = logging.getLogger('dynamo')
 
 class Framework:
