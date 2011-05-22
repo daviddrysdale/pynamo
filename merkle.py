@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-"""Minimal Merkle Tree implementation in Python"""
+"""Minimal Merkle Tree implementation"""
 import hashlib
 
-def extract_subrange(min_key, max_key, keystore):
+def _extract_subrange(min_key, max_key, keystore):
     """Find all of the keys in the keystore that hash within the given range"""
     subdict = {}
     for key, value in keystore.items():
@@ -13,7 +13,7 @@ def extract_subrange(min_key, max_key, keystore):
             subdict[key] = value
     return subdict
 
-def divide_range(min_key, max_key, divisions):
+def _divide_range(min_key, max_key, divisions):
     """Divide key range into equal size chunks"""
     total_keyrange = (max_key - min_key)
     # Round up the per-division range to ensure the whole range is covered.
@@ -27,7 +27,7 @@ class MerkleLeaf:
     def __init__(self, min_key, max_key, keystore):
         self.min_key = min_key
         self.max_key = max_key
-        subdict = extract_subrange(min_key, max_key, keystore)
+        subdict = _extract_subrange(min_key, max_key, keystore)
         self.value = hashlib.md5(str(subdict))
     def __str__(self):
         return "[%s,%s)=>%s" % (self.min_key, self.max_key, self.value.hexdigest()[:6])
@@ -44,13 +44,14 @@ class MerkleNode:
 
 class MerkleTree:
     def __init__(self, depth, min_key, max_key, keystore):
-        """Build a Merkle tree of given depth covering keys in range [min, max)"""
+        """Build a Merkle tree of given depth covering keys in range [min_key, max_key)"""
         # There are 2^depth leaves in the tree.
         num_leaves = 2 ** depth
-        divisions = divide_range(min_key, max_key, num_leaves)
+        divisions = _divide_range(min_key, max_key, num_leaves)
 
-        # Bottom layer of the tree is 2^depth leaf nodes
+        # nodes is an array of (depth+1) lists; each list is a layer of the tree
         self.nodes = []
+        # layer 0 (bottom) of the tree is (2^depth) leaf nodes
         self.nodes.append([MerkleLeaf(divisions[ii][0], divisions[ii][1], keystore)
                            for ii in xrange(num_leaves)])
         # Each layer >= 1 consists of interior nodes, and is half the size
@@ -63,6 +64,7 @@ class MerkleTree:
             level = level + 1
 
     def root(self):
+        """Return the root node of the Merkle tree"""
         return self.nodes[-1][0]
 
     def __str__(self):
@@ -73,7 +75,6 @@ class MerkleTree:
                 result = result + str(node) + ' '
             result = result + '\n'
         return result
-        
 
 
 # -----------IGNOREBEYOND: test code ---------------
@@ -127,10 +128,10 @@ class MerkleTestCase(unittest.TestCase):
             self.assertNotEqual(x1L.value.hexdigest(), x2L.value.hexdigest())
 
     def testDivideRange(self):
-        divs = divide_range(0, 1022, 12)
+        divs = _divide_range(0, 1022, 12)
         self.assertEqual(len(divs), 12)
         self.assertEqual(divs[1], (86,172))
-    
+
 if __name__ == "__main__":
     ii = 1
     while ii < len(sys.argv): # pragma: no cover
