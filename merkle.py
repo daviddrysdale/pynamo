@@ -2,71 +2,138 @@
 """Minimal Merkle Tree implementation"""
 import hashlib
 
+def keyhash(key):
+    """Return a 128-bit integer associated with a key"""
+    hashval = hashlib.md5(str(key))
+    # convert 128-bit MD5 value to long
+    return long(hashval.hexdigest(), 16)
+    
 def _extract_subrange(min_key, max_key, keystore):
     """Find all of the keys in the keystore that hash within the given range"""
-    subdict = {}
-    for key, value in keystore.items():
-        hashval = hashlib.md5(str(key))
-        # convert 128-bit MD5 value to long
-        hashval_l = long(hashval.hexdigest(), 16)
-        if hashval_l >= min_key and hashval_l < max_key:
-            subdict[key] = value
-    return subdict
 
-def _divide_range(min_key, max_key, divisions):
-    """Divide key range into equal size chunks"""
-    total_keyrange = (max_key - min_key)
-    # Round up the per-division range to ensure the whole range is covered.
-    per_leaf_range = (total_keyrange + divisions - 1) / divisions
-    return [(min_key + ii*per_leaf_range, 
-             min_key + (ii+1)*per_leaf_range) 
-            for ii in xrange(divisions)]
 
-class MerkleLeaf:
-    """Leaf node in Merkle tree, encompassing all keys in range [min, max)"""
-    def __init__(self, min_key, max_key, keystore):
+class MerkleNode(object):
+    def __init__(self):
+        self.value = None
+        self.parent = None
+
+
+class MerkleLeaf(MerkleNode):
+    """Leaf node in Merkle tree, encompassing all keys in range [min_key, max_key)"""
+    def __init__(self, min_key, max_key, initdata=None):
+        MerkleNode.__init__(self)
         self.min_key = min_key
         self.max_key = max_key
-        subdict = _extract_subrange(min_key, max_key, keystore)
-        self.value = hashlib.md5(str(subdict))
+        self.dict = dict()
+        if initdata is not None:
+            # Copy in any keys whose hash falls in range for this node
+            for key, value in initdata.items():
+                hashval = keyhash(key)
+                if hashval >= self.min_key and hashval < self.max_key:
+                    self.dict[key] = value
+        self.value = hashlib.md5(str(self.dict))
+
     def __str__(self):
         return "[%s,%s)=>%s" % (self.min_key, self.max_key, self.value.hexdigest()[:6])
 
-class MerkleNode:
+    def _check(self, key):
+        """Check that the given key falls within the range of this leaf node"""
+        hashval = keyhash(key)
+        if hashval < self.min_key or hashval >= self.max_key:
+            raise KeyError("Key %s hashes to value outside range for this leaf" % key)
+
+    def __setitem__(self, key, value):
+        """Set value for key, which must be in this leaf's range."""
+        self._check(key)
+        self.dict[key] = value
+        self.recalc()
+
+    def __delitem__(self, key):
+        """Delete value for key, which must be in this leaf's range."""
+        self._check(key)
+        del self.dict[key]
+        self.recalc()
+
+    def recalc(self):
+        """Recalculate the Merkle value for this node, and all parent nodes"""
+        self.value = hashlib.md5(str(self.dict))
+        if self.parent is not None:
+            self.parent.recalc()
+        
+
+class MerkleBranchNode(MerkleNode):
     """Interior node in Merkle tree"""
     def __init__(self, left, right):
+        MerkleNode.__init__(self)
         self.left = left
+        left.parent = self
         self.right = right
-        # Hash value is hash of two children's hash values concatenated
-        self.value = hashlib.md5(left.value.digest() + right.value.digest())
+        right.parent = self
+        self.recalc()
+
+    def recalc(self):
+        """Recalculate the Merkle value for this node, and all parent nodes"""
+        # Node value is hash of two children's hash values concatenated
+        self.value = hashlib.md5(self.left.value.digest() + self.right.value.digest())
+        if self.parent is not None:
+            self.parent.recalc()
+
     def __str__(self):
         return self.value.hexdigest()[:6]
 
-class MerkleTree:
-    def __init__(self, depth, min_key, max_key, keystore):
+
+class MerkleTree(object):
+    def __init__(self, depth=12, min_key=0, max_key=(2**128-1), initdata=None):
         """Build a Merkle tree of given depth covering keys in range [min_key, max_key)"""
+        self.min_key = min_key
+        self.max_key = max_key
+        self.depth = depth
         # There are 2^depth leaves in the tree.
-        num_leaves = 2 ** depth
-        divisions = _divide_range(min_key, max_key, num_leaves)
+        self.num_leaves = 2 ** self.depth
+        self.leaf_size = ((self.max_key - self.min_key) + self.num_leaves - 1) / self.num_leaves
 
         # nodes is an array of (depth+1) lists; each list is a layer of the tree
         self.nodes = []
         # layer 0 (bottom) of the tree is (2^depth) leaf nodes
-        self.nodes.append([MerkleLeaf(divisions[ii][0], divisions[ii][1], keystore)
-                           for ii in xrange(num_leaves)])
+        self.nodes.append([MerkleLeaf(self.min_key + ii*self.leaf_size, 
+                                      self.min_key + (ii+1)*self.leaf_size,
+                                      initdata)
+                           for ii in xrange(self.num_leaves)])
         # Each layer >= 1 consists of interior nodes, and is half the size
-        # of the layer below.
+        # of the layer below.  Each interior node is built from two nodes below it
         level = 1
-        while level <= depth:
-            self.nodes.append([MerkleNode(self.nodes[level-1][2*ii], 
-                                          self.nodes[level-1][2*ii+1]) 
+        while level <= self.depth:
+            self.nodes.append([MerkleBranchNode(self.nodes[level-1][2*ii], 
+                                                self.nodes[level-1][2*ii+1]) 
                                for ii in xrange(len(self.nodes[level-1])/2)])
             level = level + 1
+        self.root = self.nodes[-1][0]
 
-    def root(self):
-        """Return the root node of the Merkle tree"""
-        return self.nodes[-1][0]
+# PART container
+    def _findleaf(self, key):
+        """Return the index of the leaf node corresponding to the given key"""
+        hashval = keyhash(key)
+        if hashval < self.min_key or hashval >= self.max_key:
+            raise KeyError("Key %s hashes to value outside range for this tree" % key)
+        return hashval / self.leaf_size
 
+    def __setitem__(self, key, value):
+        leafidx = self._findleaf(key)
+        self.nodes[0][leafidx][key] = value
+
+    def __delitem__(self, key, value):
+        leafidx = self._findleaf(key)
+        del self.nodes[0][leafidx][key]
+
+    def __getitem__(self, key):
+        leafidx = self._findleaf(key)
+        return self.nodes[0][leafidx][key]
+
+    def __contains__(self, key):
+        leafidx = self._findleaf(key)
+        return (key in self.nodes[0][leafidx])
+
+# PART debugoutput
     def __str__(self):
         result = ""
         for level, list in enumerate(self.nodes):
@@ -111,9 +178,9 @@ class MerkleTestCase(unittest.TestCase):
         x0 = MerkleTree(3, self.min_key, self.max_key, self.keystore) 
         x1 = MerkleTree(3, self.min_key, self.max_key, self.keystore) 
         x2 = MerkleTree(3, self.min_key, self.max_key, keystore2) 
-        x0t = x0.root()
-        x1t = x1.root()
-        x2t = x2.root()
+        x0t = x0.root
+        x1t = x1.root
+        x2t = x2.root
         self.assertEqual(x0t.value.hexdigest(), x1t.value.hexdigest())
         self.assertNotEqual(x1t.value.hexdigest(), x2t.value.hexdigest())
         x1L = x1t.left
@@ -127,10 +194,12 @@ class MerkleTestCase(unittest.TestCase):
             self.assertEqual(x1R.value.hexdigest(), x2R.value.hexdigest())
             self.assertNotEqual(x1L.value.hexdigest(), x2L.value.hexdigest())
 
-    def testDivideRange(self):
-        divs = _divide_range(0, 1022, 12)
-        self.assertEqual(len(divs), 12)
-        self.assertEqual(divs[1], (86,172))
+    def testLeafIdx(self):
+        x = MerkleTree()
+        for ii in xrange(10000):
+            key = random_3letters()
+            leafidx = x._findleaf(key)
+            x.nodes[0][leafidx]._check(key)
 
 if __name__ == "__main__":
     ii = 1
