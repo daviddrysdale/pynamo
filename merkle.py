@@ -8,9 +8,6 @@ def keyhash(key):
     # convert 128-bit MD5 value to long
     return long(hashval.hexdigest(), 16)
     
-def _extract_subrange(min_key, max_key, keystore):
-    """Find all of the keys in the keystore that hash within the given range"""
-
 
 class MerkleNode(object):
     def __init__(self):
