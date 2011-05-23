@@ -10,6 +10,7 @@ from hash_multiple import ConsistentHashTable
 from dynamomessages import ClientPut, ClientGet, ClientPutRsp, ClientGetRsp
 from dynamomessages import PutReq, GetReq, PutRsp, GetRsp
 from dynamomessages import PingReq, PingRsp, DynamoRequestMessage
+from merkle import MerkleTree
 
 logconfig.init_logging()
 _logger = logging.getLogger('dynamo')
@@ -26,7 +27,7 @@ class DynamoNode(Node):
 
     def __init__(self):
         Node.__init__(self)
-        self.local_store = {} # key => (value, metadata)
+        self.local_store = MerkleTree() # key => (value, metadata)
         self.pending_put_req = {} # seqno => set of requests sent to other nodes
         self.pending_put_rsp = {} # seqno => set of nodes that have stored
         self.pending_put_msg = {} # seqno => original client message
