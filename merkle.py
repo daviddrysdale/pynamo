@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """Minimal Merkle Tree implementation"""
 import hashlib
+from UserDict import DictMixin
 
 def keyhash(key):
     """Return a 128-bit integer associated with a key"""
@@ -79,7 +80,7 @@ class MerkleBranchNode(MerkleNode):
         return self.value.hexdigest()[:6]
 
 
-class MerkleTree(object):
+class MerkleTree(DictMixin):
     def __init__(self, depth=12, min_key=0, max_key=(2**128-1), initdata=None):
         """Build a Merkle tree of given depth covering keys in range [min_key, max_key)"""
         self.min_key = min_key
@@ -130,6 +131,22 @@ class MerkleTree(object):
         leafidx = self._findleaf(key)
         return (key in self.nodes[0][leafidx].data)
 
+    def keys(self):
+        results = []
+        for leafidx in xrange(self.num_leaves):
+            results.extend(self.nodes[0][leafidx].data.keys())
+        return results
+
+    def __iter__(self):
+        for leafidx in xrange(self.num_leaves):
+            for key in self.nodes[0][leafidx].data:
+                yield key
+
+    def iteritems(self):
+        for leafidx in xrange(self.num_leaves):
+            for key, value in self.nodes[0][leafidx].data.items():
+                yield (key, value)
+    
 # PART debugoutput
     def __str__(self):
         result = ""
@@ -204,12 +221,14 @@ class MerkleTestCase(unittest.TestCase):
         d1['b'] = 2
         self.assertEqual(d1['a'], 1)
         self.assertEqual(d1['b'], 2)
+        self.assertEqual(len(d1), 2)
         self.assertTrue('a' in d1)
         self.assertTrue('b' in d1)
         self.assertFalse('c' in d1)
         del d1['a']
         self.assertRaises(KeyError, d1.__getitem__, *('a',))
         self.assertEqual(d1['b'], 2)
+        self.assertEqual(len(d1), 1)
         self.assertFalse('a' in d1)
         self.assertTrue('b' in d1)
         self.assertFalse('c' in d1)
@@ -217,7 +236,32 @@ class MerkleTestCase(unittest.TestCase):
         d2 = MerkleTree(initdata={'a': 1, 'b': 2})
         self.assertEqual(d2['a'], 1)
         self.assertEqual(d2['b'], 2)
+        self.assertEqual(len(d2), 2)
+        self.assertNotEquals(d1, d2)
+        del d2['a']
+        self.assertEqual(d1, d2)
         
+        d2.clear()
+        self.assertFalse('a' in d2)
+        self.assertFalse('b' in d2)
+        self.assertFalse('c' in d2)
+
+    def test002(self):
+        d1 = MerkleTree(initdata={'a': 1, 'b': 2, 'c': 3})
+        d2 = MerkleTree(initdata={'a': 1, 'b': 2, 'c': 3})
+        self.assertEqual(d1, d2)
+        self.assertEqual(d1.pop('a'), 1)
+        self.assertEqual(d1.pop('b'), 2)
+        self.assertEqual(d1.pop('x', 'yy'), 'yy')
+        self.assertEqual(d1.popitem(), ('c', 3))
+
+        d2.update({'x': 8, 'y': 9})
+        self.assertEqual(set(('a','b','c','x','y')),
+                         set(d2.keys()))
+        d2.update((('u', 10), ('v', 11), ('w', 12)))
+        self.assertEqual(set(('a','b','c','u','v','w','x','y')),
+                         set(d2.keys()))
+
 
 if __name__ == "__main__":
     ii = 1

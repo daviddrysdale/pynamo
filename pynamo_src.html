@@ -354,7 +354,7 @@ original sender of the failure.  To use this facility, the sender just needs to 
 <p>
 To illustrate, here's the changes to the client to get it to resend any request on failure.
 </p>
-#diff <dynamo1.py:clientnode> <dynamo.py:clientnode>
+#diff <dynamo1.py:clientnode> <dynamo2.py:clientnode>
 <p>
 To show this in action, we can see what happens if the first receiving node fails; the client eventually
 retries and picks a different node at random.
@@ -367,16 +367,16 @@ Inside the Dynamo network, each node keeps track of the requests it has outstand
 a request times out the destination node is marked as failed and the request is 
 sent on to additional (hopefully working) nodes.
 </p>
-#diff <dynamo1.py:dynamonode> <dynamo.py:dynamonode>
+#diff <dynamo1.py:dynamonode> <dynamo2.py:dynamonode>
 <p>
 Failed nodes are avoided in the preference list, both for <b>Put</b> operations:
 </p>
-#diff <dynamo1.py:rcv_clientput> <dynamo.py:rcv_clientput>
+#diff <dynamo1.py:rcv_clientput> <dynamo2.py:rcv_clientput>
 <p>and for <b>Get</b> operations:</p>
-#diff <dynamo1.py:rcv_clientget> <dynamo.py:rcv_clientget>
+#diff <dynamo1.py:rcv_clientget> <dynamo2.py:rcv_clientget>
 <p>A node gets treated as failed when some request to it times out. To keep the replication factors up to
   scratch, the timeout code also expands the set of nodes that the original request was sent to.</p>
-#include <dynamo.py:rsp_timer_pop>
+#include <dynamo2.py:rsp_timer_pop>
 <p>
 With these modifications, the failures shown earlier start to look more recoverable from:
 </p>
