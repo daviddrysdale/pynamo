@@ -46,6 +46,7 @@ class DynamoNode(Node):
 # PART rsp_timer_pop
     def rsp_timer_pop(self, reqmsg):
         self.failed_nodes.append(reqmsg.to_node)
+        if not isinstance(reqmsg, DynamoRequestMessage): return
         # Send the request to an additional node by regenerating the preference list
         preference_list = DynamoNode.chash.find_nodes(reqmsg.key, DynamoNode.N, self.failed_nodes)
         for node in preference_list:
