@@ -24,14 +24,14 @@ class MerkleLeaf(MerkleNode):
         MerkleNode.__init__(self)
         self.min_key = min_key
         self.max_key = max_key
-        self.dict = dict()
+        self.data = dict()
         if initdata is not None:
             # Copy in any keys whose hash falls in range for this node
             for key, value in initdata.items():
                 hashval = keyhash(key)
                 if hashval >= self.min_key and hashval < self.max_key:
-                    self.dict[key] = value
-        self.value = hashlib.md5(str(self.dict))
+                    self.data[key] = value
+        self.value = hashlib.md5(str(self.data))
 
     def __str__(self):
         return "[%s,%s)=>%s" % (self.min_key, self.max_key, self.value.hexdigest()[:6])
@@ -45,18 +45,18 @@ class MerkleLeaf(MerkleNode):
     def __setitem__(self, key, value):
         """Set value for key, which must be in this leaf's range."""
         self._check(key)
-        self.dict[key] = value
+        self.data[key] = value
         self.recalc()
 
     def __delitem__(self, key):
         """Delete value for key, which must be in this leaf's range."""
         self._check(key)
-        del self.dict[key]
+        del self.data[key]
         self.recalc()
 
     def recalc(self):
         """Recalculate the Merkle value for this node, and all parent nodes"""
-        self.value = hashlib.md5(str(self.dict))
+        self.value = hashlib.md5(str(self.data))
         if self.parent is not None:
             self.parent.recalc()
         
@@ -119,19 +119,19 @@ class MerkleTree(object):
 
     def __setitem__(self, key, value):
         leafidx = self._findleaf(key)
-        self.nodes[0][leafidx][key] = value
+        self.nodes[0][leafidx].data[key] = value
 
-    def __delitem__(self, key, value):
+    def __delitem__(self, key):
         leafidx = self._findleaf(key)
-        del self.nodes[0][leafidx][key]
+        del self.nodes[0][leafidx].data[key]
 
     def __getitem__(self, key):
         leafidx = self._findleaf(key)
-        return self.nodes[0][leafidx][key]
+        return self.nodes[0][leafidx].data[key]
 
     def __contains__(self, key):
         leafidx = self._findleaf(key)
-        return (key in self.nodes[0][leafidx])
+        return (key in self.nodes[0][leafidx].data)
 
 # PART debugoutput
     def __str__(self):
@@ -200,6 +200,27 @@ class MerkleTestCase(unittest.TestCase):
             key = random_3letters()
             leafidx = x._findleaf(key)
             x.nodes[0][leafidx]._check(key)
+
+    def testDict(self):
+        d1 = MerkleTree()
+        d1['a'] = 1
+        d1['b'] = 2
+        self.assertEqual(d1['a'], 1)
+        self.assertEqual(d1['b'], 2)
+        self.assertTrue('a' in d1)
+        self.assertTrue('b' in d1)
+        self.assertFalse('c' in d1)
+        del d1['a']
+        self.assertRaises(KeyError, d1.__getitem__, *('a',))
+        self.assertEqual(d1['b'], 2)
+        self.assertFalse('a' in d1)
+        self.assertTrue('b' in d1)
+        self.assertFalse('c' in d1)
+
+        d2 = MerkleTree(initdata={'a': 1, 'b': 2})
+        self.assertEqual(d2['a'], 1)
+        self.assertEqual(d2['b'], 2)
+        
 
 if __name__ == "__main__":
     ii = 1
