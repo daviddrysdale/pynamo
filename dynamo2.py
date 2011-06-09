@@ -8,6 +8,7 @@ from framework import Framework
 from hash_multiple import ConsistentHashTable
 from dynamomessages import ClientPut, ClientGet, ClientPutRsp, ClientGetRsp
 from dynamomessages import PutReq, GetReq, PutRsp, GetRsp
+from dynamomessages import DynamoRequestMessage
 
 logconfig.init_logging()
 _logger = logging.getLogger('dynamo')
