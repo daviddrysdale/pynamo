@@ -10,16 +10,16 @@ def keyhash(key):
     return long(hashval.hexdigest(), 16)
     
 
-class MerkleNode(object):
+class MerkleTreeNode(object):
     def __init__(self):
         self.value = None
         self.parent = None
 
 
-class MerkleLeaf(MerkleNode):
+class MerkleLeaf(MerkleTreeNode):
     """Leaf node in Merkle tree, encompassing all keys in range [min_key, max_key)"""
     def __init__(self, min_key, max_key, initdata=None):
-        MerkleNode.__init__(self)
+        MerkleTreeNode.__init__(self)
         self.min_key = min_key
         self.max_key = max_key
         self.data = dict()
@@ -59,10 +59,10 @@ class MerkleLeaf(MerkleNode):
             self.parent.recalc()
         
 
-class MerkleBranchNode(MerkleNode):
+class MerkleBranchNode(MerkleTreeNode):
     """Interior node in Merkle tree"""
     def __init__(self, left, right):
-        MerkleNode.__init__(self)
+        MerkleTreeNode.__init__(self)
         self.left = left
         left.parent = self
         self.right = right
