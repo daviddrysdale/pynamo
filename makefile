@@ -29,7 +29,7 @@ coverage:
 
 tar: pynamo.tgz
 pynamo.tgz: $(ALL_FILES)
-	tar czf $@ $(ALL_FILES)	
+	tar czf $@ $^
 
 slap:
 	slap *.py
