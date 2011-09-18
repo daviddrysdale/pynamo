@@ -31,8 +31,9 @@ tar: pynamo.tgz
 pynamo.tgz: $(ALL_FILES)
 	tar czf $@ $^
 
-slap:
-	slap *.py
-
 clean: 
 	rm -f *.pyc *,cover .coverage pynamo.log pynamo.html
+
+lint:
+	pyflakes *.py
+	pep8 --repeat *.py
