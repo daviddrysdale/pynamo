@@ -4,12 +4,13 @@ import logging
 
 _logger = logging.getLogger('dynamo')
 
+
 class History:
     """
     History of everything that happened in the framework, as a list of (action, object) pairs.
-    
+
     Possible values for the action are:
-      'send'    - message sent 
+      'send'    - message sent
       'forward' - message forwarded
       'drop'    - message dropped due to node down
       'cut'     - message dropped due to comms down
@@ -47,7 +48,7 @@ class History:
             for node in force_include:
                 nodeset.add(node)
         nodelist = list(nodeset)
-        nodelist.sort(key=lambda x:x.name)
+        nodelist.sort(key=lambda x: x.name)
         return nodelist
 
     @classmethod
@@ -57,32 +58,32 @@ class History:
         nodelist = cls.nodelist(force_include)
         num_nodes = len(nodelist)
         included_nodes = set()
-    
+
         # Line make-up is like this:
         #     0 1 2 3 4 5 6 7 8
         #     A . . . B . . . C
         # If m=number of cols between nodes and N=number of nodes
         # then overall line lengh = ((N-1)*(m+1)) + 1
         # (example above has N=3 m=3 => len=9=2*4+1)
-        linelen = ((num_nodes - 1)*(spacing+1)) + 1
-    
+        linelen = ((num_nodes - 1) * (spacing + 1)) + 1
+
         # Figure out the column for each node
         column = {}
         for ii in range(num_nodes):
-            column[nodelist[ii]] = ii * (spacing+1)
-    
-        vertlines = {} # Current vertical lines, msg=>column
+            column[nodelist[ii]] = ii * (spacing + 1)
+
+        vertlines = {}  # Current vertical lines, msg=>column
         failed_nodes = set()
         lines = [_header_line(nodelist, spacing)]
         lineno = 0
-    
+
         # Step through all of the actions
         for ii in range(len(cls.history)):
             action, msg = cls.history[ii]
             lineno = lineno + 1
             # First, build up a line with the current set of vertical lines and leaders
             this_line = [' ' for jj in xrange(linelen)]
-            for node, nodecol in column.items(): 
+            for node, nodecol in column.items():
                 if node in included_nodes:
                     if node in failed_nodes:
                         this_line[nodecol] = 'x'
@@ -90,68 +91,69 @@ class History:
                         this_line[nodecol] = '.'
                 else:
                     this_line[nodecol] = ' '
-            for vertcol in vertlines.values(): this_line[vertcol] = '|'
-                
+            for vertcol in vertlines.values():
+                this_line[vertcol] = '|'
+
             # Now look at this particular action
             if action == "send" or action == "forward":
                 if action == "forward":
                     from_node = msg.intermediate_node
-                    start_marker = '+' 
+                    start_marker = '+'
                 else:
                     from_node = msg.from_node
                     start_marker = 'o'
                 # Pick a suitable spot for the vertical line for this message
-                vertcol = _pick_column(vertlines, column, 
+                vertcol = _pick_column(vertlines, column,
                                        column[from_node], column[msg.to_node])
                 vertlines[msg] = vertcol
                 left2right = (column[from_node] < vertcol)
                 if left2right:
-                    end_marker = '+' # SOUTHWEST
+                    end_marker = '+'  # SOUTHWEST
                 else:
-                    end_marker = '+' # SOUTHEAST
-                
+                    end_marker = '+'  # SOUTHEAST
+
                 # Draw the horizontal line
-                _draw_horiz(this_line, 
+                _draw_horiz(this_line,
                             column[from_node], start_marker,
                             vertcol, end_marker)
                 # Add the message text
                 msgtext = str(msg)
-                if left2right: #    o----+ Text
-                    _write_text(this_line, vertcol+1, ' ' + msgtext)
-                elif len(msgtext) > vertcol: #  +---o Text
-                    _write_text(this_line, column[from_node]+1, ' ' + msgtext)
-                else: # Text +---o
+                if left2right:  # o----+ Text
+                    _write_text(this_line, vertcol + 1, ' ' + msgtext)
+                elif len(msgtext) > vertcol:  # +---o Text
+                    _write_text(this_line, column[from_node] + 1, ' ' + msgtext)
+                else:  # Text +---o
                     _write_text(this_line, vertcol - len(msgtext) - 1, msgtext + ' ')
-                
+
             elif action == "deliver" or action == "drop":
-                # Find the existing vertline that corresponds to this message, and 
+                # Find the existing vertline that corresponds to this message, and
                 # remove it
                 vertcol = vertlines[msg]
-                del vertlines[msg] 
+                del vertlines[msg]
 
                 left2right = (vertcol < column[msg.to_node])
                 if left2right:
-                    start_marker = '+' # NORTHEAST
+                    start_marker = '+'  # NORTHEAST
                 else:
-                    start_marker = '+' # NORTHWEST
+                    start_marker = '+'  # NORTHWEST
                 if action == "drop":
                     end_marker = 'X'
                 elif left2right:
                     end_marker = '>'
                 else:
                     end_marker = '<'
-    
+
                 # Draw the horizontal line
                 _draw_horiz(this_line,
                             vertcol, start_marker,
                             column[msg.to_node], end_marker)
             elif action == "cut":
-                # Find the existing vertline that corresponds to this message, and 
+                # Find the existing vertline that corresponds to this message, and
                 # remove it
                 vertcol = vertlines[msg]
-                del vertlines[msg] 
+                del vertlines[msg]
                 this_line[vertcol] = 'X'
-                
+
             elif action == "start":
                 if verbose_timers:
                     _write_center(this_line, column[msg.from_node], "%s:Start" % msg)
@@ -160,7 +162,7 @@ class History:
             elif action == "pop":
                 # In non-verbose mode, only display a timer pop if it looks like it
                 # produced some activity.
-                if ((ii+1 < len(cls.history) and cls.history[ii+1][0] == "send") or
+                if ((ii + 1 < len(cls.history) and cls.history[ii + 1][0] == "send") or
                     verbose_timers):
                     _write_center(this_line, column[msg.from_node], "%s:Pop" % msg)
                 else:
@@ -184,40 +186,42 @@ class History:
                     continue
             elif action == "remove":
                 included_nodes.remove(msg.from_node)
-                continue # don't emit a line
+                continue  # don't emit a line
             elif action == "add":
                 included_nodes.add(msg.from_node)
-                continue # don't emit a line
-    
+                continue  # don't emit a line
+
             # Put the array of characters together into a line, and add that to the list
             if lineno > start_line:
                 lines.append(''.join(this_line))
-    
-    
+
         # Build a final epilogue set of lines.  First, a header line
         lines.append(_header_line(nodelist, spacing))
         # Now accumulate the contents information from the nodes
-        contents = {} # node -> list of contents
+        contents = {}  # node -> list of contents
         longest_conts = 0
         for node in column.keys():
             node_conts = node.get_contents()
             contents[node] = node_conts
-            if len(node_conts) > longest_conts: longest_conts = len(node_conts)
+            if len(node_conts) > longest_conts:
+                longest_conts = len(node_conts)
         # Now typeset it
         for ii in range(longest_conts):
             this_line = [' ' for jj in xrange(linelen)]
-            for node, nodecol in column.items(): 
+            for node, nodecol in column.items():
                 if ii < len(contents[node]):
                     _write_center(this_line, nodecol, str(contents[node][ii]))
             lines.append(''.join(this_line))
         return '\n'.join(lines)
-            
+
+
 def _header_line(nodelist, m):
     """Generate header line string with m columns between nodes"""
     header_line = ''
     spacer = ' ' * m
     for node in nodelist:
-        if header_line != '': header_line = header_line + spacer
+        if header_line != '':
+            header_line = header_line + spacer
         header_line = header_line + node.name
     return header_line
 
@@ -226,8 +230,10 @@ def _pick_column(vertlines, columns, from_col, to_col):
     """Pick a column in (from_col, to_col) that is not one of the entries in vertlines or columns"""
     # Collate the disallowed columns
     not_allowed = set()
-    for col in vertlines.values(): not_allowed.add(col)
-    for col in columns.values(): not_allowed.add(col)
+    for col in vertlines.values():
+        not_allowed.add(col)
+    for col in columns.values():
+        not_allowed.add(col)
 
     # Pick the first free column close to the from_col
     if from_col == to_col:
@@ -247,7 +253,7 @@ def _pick_column(vertlines, columns, from_col, to_col):
         if not candidate in not_allowed:
             return candidate
         candidate = candidate + delta
-    
+
     # ALTERNATIVE IMPLEMENTATION, NOT USED:
     # Examine every possible candidate position and pick the one that is furthest
     # from any disallowed columns
@@ -264,11 +270,11 @@ def _pick_column(vertlines, columns, from_col, to_col):
     for col in xrange(left, xright):
         # Calculate the distance to the nearest excluded column
         insert_point = bisect(not_allowed_list, col)
-        if insert_point > 0: # look at not_allowed[insert_point-1]
-            dist_left = (col - not_allowed_list[insert_point-1])
+        if insert_point > 0:  # look at not_allowed[insert_point - 1]
+            dist_left = (col - not_allowed_list[insert_point - 1])
         else:
             dist_left = 99999
-        if insert_point < len(not_allowed_list): # look at not_allowed[insert_point]
+        if insert_point < len(not_allowed_list):  # look at not_allowed[insert_point]
             dist_right = (not_allowed_list[insert_point] - col)
         else:
             dist_right = 99999
@@ -276,8 +282,10 @@ def _pick_column(vertlines, columns, from_col, to_col):
         if distance > best_distance:
             best_distance = distance
             best_col = col
-    if best_col == -1: raise ValueError("No free column found!")
+    if best_col == -1:
+        raise ValueError("No free column found!")
     return best_col
+
 
 def _draw_horiz(line, from_col, from_char, to_col, to_char):
     line[from_col] = from_char
@@ -287,20 +295,22 @@ def _draw_horiz(line, from_col, from_char, to_col, to_char):
         xright = to_col
     else:
         left = to_col + 1
-        xright = from_col 
-    for jj in xrange(left, xright): line[jj] = '-'
+        xright = from_col
+    for jj in xrange(left, xright):
+        line[jj] = '-'
+
 
 def _write_text(line, col, text):
     # text may need to extend the array
     extend_by = (col + len(text)) - len(line)
-    for ii in xrange(extend_by): line.append(' ')
+    for ii in xrange(extend_by):
+        line.append(' ')
     for c in text:
         line[col] = c
         col = col + 1
 
+
 def _write_center(line, col, text):
-    if (col > (len(text)/2)):
-        col = col - (len(text)/2)
+    if (col > (len(text) / 2)):
+        col = col - (len(text) / 2)
     _write_text(line, col, text)
-
-

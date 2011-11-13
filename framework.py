@@ -12,11 +12,12 @@ import logconfig
 logconfig.init_logging()
 _logger = logging.getLogger('dynamo')
 
+
 class Framework:
-    cuts = [] # List of incommunicado sets of nodes
-    queue = deque([]) # queue of pending messages
-    pending_timers = {} # request_message => timer
-    
+    cuts = []  # List of incommunicado sets of nodes
+    queue = deque([])  # queue of pending messages
+    pending_timers = {}  # request_message => timer
+
     @classmethod
     def reset(cls):
         cls.cuts = []
@@ -25,14 +26,14 @@ class Framework:
     @classmethod
     def cut_wires(cls, from_nodes, to_nodes):
         cls.cuts.append((from_nodes, to_nodes))
-    
+
     @classmethod
     def reachable(cls, from_node, to_node):
         for (from_nodes, to_nodes) in cls.cuts:
             if from_node in from_nodes and to_node in to_nodes:
                 return False
         return True
-    
+
     @classmethod
     def send_message(cls, msg, expect_reply=True):
         """Send a message"""
@@ -70,13 +71,15 @@ class Framework:
         fwd_msg.to_node = new_to_node
         cls.queue.append(fwd_msg)
         History.add("forward", fwd_msg)
-    
+
     @classmethod
     def schedule(cls, msgs_to_process=None, timers_to_process=None):
         """Schedule given number of pending messages"""
-        if msgs_to_process is None: msgs_to_process = 32768
-        if timers_to_process is None: timers_to_process = 32768
-        
+        if msgs_to_process is None:
+            msgs_to_process = 32768
+        if timers_to_process is None:
+            timers_to_process = 32768
+
         while cls._work_to_do():
             _logger.info("Start of schedule: %d (limit %d) pending messages, %d (limit %d) pending timers",
                          len(cls.queue), msgs_to_process, Timer.pending_count(), timers_to_process)
@@ -102,29 +105,35 @@ class Framework:
                     History.add("deliver", msg)
                     msg.to_node.rcvmsg(msg)
                 msgs_to_process = msgs_to_process - 1
-                if msgs_to_process == 0: return
-    
+                if msgs_to_process == 0:
+                    return
+
             # No pending messages; potentially pop a (single) timer
             if Timer.pending_count() > 0 and timers_to_process > 0:
                 # Pop the first pending timer; this may enqueue work
                 Timer.pop_timer()
                 timers_to_process = timers_to_process - 1
-            if timers_to_process == 0: return
+            if timers_to_process == 0:
+                return
 
     @classmethod
     def _work_to_do(cls):
         """Indicate whether there is work to do"""
-        if cls.queue: return True
-        if Timer.pending_count() > 0: return True
+        if cls.queue:
+            return True
+        if Timer.pending_count() > 0:
+            return True
         return False
+
 
 def reset():
     """Reset all message and other history"""
     Framework.reset()
     Timer.reset()
     History.reset()
+
+
 def reset_all():
     """Reset all message and other history, and remove all nodes"""
     reset()
     Node.reset()
-

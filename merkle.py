@@ -3,12 +3,13 @@
 import hashlib
 from UserDict import DictMixin
 
+
 def keyhash(key):
     """Return a 128-bit integer associated with a key"""
     hashval = hashlib.md5(str(key))
     # convert 128-bit MD5 value to long
     return long(hashval.hexdigest(), 16)
-    
+
 
 class MerkleTreeNode(object):
     def __init__(self):
@@ -57,7 +58,7 @@ class MerkleLeaf(MerkleTreeNode):
         self.value = hashlib.md5(str(self.data))
         if self.parent is not None:
             self.parent.recalc()
-        
+
 
 class MerkleBranchNode(MerkleTreeNode):
     """Interior node in Merkle tree"""
@@ -81,7 +82,7 @@ class MerkleBranchNode(MerkleTreeNode):
 
 
 class MerkleTree(DictMixin):
-    def __init__(self, depth=12, min_key=0, max_key=(2**128-1), initdata=None):
+    def __init__(self, depth=12, min_key=0, max_key=(2 ** 128 - 1), initdata=None):
         """Build a Merkle tree of given depth covering keys in range [min_key, max_key)"""
         self.min_key = min_key
         self.max_key = max_key
@@ -93,17 +94,17 @@ class MerkleTree(DictMixin):
         # nodes is an array of (depth+1) lists; each list is a layer of the tree
         self.nodes = []
         # layer 0 (bottom) of the tree is (2^depth) leaf nodes
-        self.nodes.append([MerkleLeaf(self.min_key + ii*self.leaf_size, 
-                                      self.min_key + (ii+1)*self.leaf_size,
+        self.nodes.append([MerkleLeaf(self.min_key + ii * self.leaf_size,
+                                      self.min_key + (ii + 1) * self.leaf_size,
                                       initdata)
                            for ii in xrange(self.num_leaves)])
         # Each layer >= 1 consists of interior nodes, and is half the size
         # of the layer below.  Each interior node is built from two nodes below it
         level = 1
         while level <= self.depth:
-            self.nodes.append([MerkleBranchNode(self.nodes[level-1][2*ii], 
-                                                self.nodes[level-1][2*ii+1]) 
-                               for ii in xrange(len(self.nodes[level-1])/2)])
+            self.nodes.append([MerkleBranchNode(self.nodes[level - 1][2 * ii],
+                                                self.nodes[level - 1][2 * ii + 1])
+                               for ii in xrange(len(self.nodes[level - 1]) / 2)])
             level = level + 1
         self.root = self.nodes[-1][0]
 
@@ -146,7 +147,7 @@ class MerkleTree(DictMixin):
         for leafidx in xrange(self.num_leaves):
             for key, value in self.nodes[0][leafidx].data.items():
                 yield (key, value)
-    
+
 # PART debugoutput
     def __str__(self):
         result = ""
@@ -166,11 +167,12 @@ import unittest
 
 from testutils import random_3letters
 
+
 class MerkleTestCase(unittest.TestCase):
     """Test Merkle tree implementation"""
 
     def setUp(self):
-        self.keystore = dict((random_3letters(), random.randint(0,99)) for ii in xrange(50))
+        self.keystore = dict((random_3letters(), random.randint(0, 99)) for ii in xrange(50))
         self.keya = long(hashlib.md5('A').hexdigest(), 16)
         self.keyb = long(hashlib.md5('B').hexdigest(), 16)
         if self.keya < self.keyb:
@@ -182,16 +184,16 @@ class MerkleTestCase(unittest.TestCase):
 
     def testCreation(self):
         # MD5 values are 128-bit; convert to long
-        x = MerkleTree(3, self.min_key, self.max_key, self.keystore) 
+        x = MerkleTree(3, self.min_key, self.max_key, self.keystore)
         xs = str(x)
         return xs
 
     def testCompare(self):
         keystore2 = copy.copy(self.keystore)
         keystore2['A'] = 'xyzzy'
-        x0 = MerkleTree(3, self.min_key, self.max_key, self.keystore) 
-        x1 = MerkleTree(3, self.min_key, self.max_key, self.keystore) 
-        x2 = MerkleTree(3, self.min_key, self.max_key, keystore2) 
+        x0 = MerkleTree(3, self.min_key, self.max_key, self.keystore)
+        x1 = MerkleTree(3, self.min_key, self.max_key, self.keystore)
+        x2 = MerkleTree(3, self.min_key, self.max_key, keystore2)
         x0t = x0.root
         x1t = x1.root
         x2t = x2.root
@@ -240,7 +242,7 @@ class MerkleTestCase(unittest.TestCase):
         self.assertNotEquals(d1, d2)
         del d2['a']
         self.assertEqual(d1, d2)
-        
+
         d2.clear()
         self.assertFalse('a' in d2)
         self.assertFalse('b' in d2)
@@ -256,20 +258,20 @@ class MerkleTestCase(unittest.TestCase):
         self.assertEqual(d1.popitem(), ('c', 3))
 
         d2.update({'x': 8, 'y': 9})
-        self.assertEqual(set(('a','b','c','x','y')),
+        self.assertEqual(set(('a', 'b', 'c', 'x', 'y')),
                          set(d2.keys()))
         d2.update((('u', 10), ('v', 11), ('w', 12)))
-        self.assertEqual(set(('a','b','c','u','v','w','x','y')),
+        self.assertEqual(set(('a', 'b', 'c', 'u', 'v', 'w', 'x', 'y')),
                          set(d2.keys()))
 
 
 if __name__ == "__main__":
     ii = 1
-    while ii < len(sys.argv): # pragma: no cover
+    while ii < len(sys.argv):  # pragma: no cover
         arg = sys.argv[ii]
         if arg == "-s" or arg == "--seed":
-            random.seed(sys.argv[ii+1])
-            del sys.argv[ii:ii+2]
+            random.seed(sys.argv[ii + 1])
+            del sys.argv[ii:ii + 2]
         else:
             ii = ii + 1
     unittest.main()

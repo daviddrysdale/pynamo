@@ -4,6 +4,7 @@ import hashlib
 import binascii
 import bisect
 
+
 class ConsistentHashTable:
     def __init__(self, nodelist, repeat):
         """Initialize a consistent hash table for the given list of nodes"""
@@ -11,23 +12,23 @@ class ConsistentHashTable:
         baselist = []
         for node in nodelist:
             for ii in range(repeat):
-                nodestring = str(node) + (":%d" % ii) 
+                nodestring = str(node) + (":%d" % ii)
                 baselist.append((hashlib.md5(nodestring).digest(), node))
         # Build two lists: one of (hashvalue, node) pairs, sorted by hashvalue
         # One of just the hashvalues, to allow use of bisect.
-        self.nodelist = sorted(baselist, key=lambda x:x[0])
+        self.nodelist = sorted(baselist, key=lambda x: x[0])
         self.hashlist = [hashnode[0] for hashnode in self.nodelist]
 
     def find_nodes(self, key, count=1, avoid=None):
         """Return a list of count nodes from the hash table that are consecutively after the hash of the given key"""
         hv = hashlib.md5(str(key)).digest()
-        if avoid is None: # Use an empty set
-            avoid = set() 
+        if avoid is None:  # Use an empty set
+            avoid = set()
         initial_index = bisect.bisect(self.hashlist, hv)
         next_index = initial_index
         results = []
         while len(results) < count:
-            if next_index == len(self.nodelist): # Wrap round to the start
+            if next_index == len(self.nodelist):  # Wrap round to the start
                 next_index = 0
             node = self.nodelist[next_index][1]
             if node not in avoid and node not in results:
@@ -40,7 +41,7 @@ class ConsistentHashTable:
 
     def __str__(self):
         return ",".join(["(%s, %s)" % (binascii.hexlify(nodeinfo[0]), nodeinfo[1]) for nodeinfo in self.nodelist])
-            
+
 # -----------IGNOREBEYOND: test code ---------------
 import sys
 import random
@@ -48,6 +49,8 @@ import unittest
 from testutils import random_3letters, Stats
 
 NODE_REPEAT = 10
+
+
 class HashMultipleTestCase(unittest.TestCase):
     """Test consistent hash utility that uses multiple virtual nodes"""
 
@@ -59,9 +62,9 @@ class HashMultipleTestCase(unittest.TestCase):
             node = random_3letters()
             self.nodeset.add(node)
         self.c2 = ConsistentHashTable(self.nodeset, NODE_REPEAT)
-        
+
     def testSmallExact(self):
-        self.assertEqual(str(self.c1), 
+        self.assertEqual(str(self.c1),
                          "(0ec9e6875e4c6e6702e1b81813a0b70d, B),"
                          "(1aa81a7562b705fb6779655b8e407ee3, A),"
                          "(1d1eeea52e95de7227efa6e226563cd2, C),"
@@ -70,8 +73,8 @@ class HashMultipleTestCase(unittest.TestCase):
                          "(8b872364fb86c3da3f942c6346f01195, C)")
         self.assertEqual(self.c1.find_nodes('splurg', 2), ['A', 'C'])
         self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A',)), ['C', 'B'])
-        self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A','B')), ['C'])
-        self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A','B','C')), [])
+        self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A', 'B')), ['C'])
+        self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A', 'B', 'C')), [])
 
     def testLarge(self):
         x = self.c2.find_nodes('splurg', 15)
@@ -90,7 +93,7 @@ class HashMultipleTestCase(unittest.TestCase):
         print ("%d random hash keys assigned to %d nodes "
                "are distributed across the nodes "
                "with a standard deviation of %0.2f (compared to a mean of %d)." %
-               (numkeys, len(self.nodeset), stats.stddev(), numkeys/len(self.nodeset)))
+               (numkeys, len(self.nodeset), stats.stddev(), numkeys / len(self.nodeset)))
 
     def testFailover(self):
         """For a given unavailable node, see what other nodes get new traffic"""
@@ -118,14 +121,14 @@ class HashMultipleTestCase(unittest.TestCase):
 
 if __name__ == "__main__":
     ii = 1
-    while ii < len(sys.argv): # pragma: no cover
+    while ii < len(sys.argv):  # pragma: no cover
         arg = sys.argv[ii]
         if arg == "-s" or arg == "--seed":
-            random.seed(sys.argv[ii+1])
-            del sys.argv[ii:ii+2]
+            random.seed(sys.argv[ii + 1])
+            del sys.argv[ii:ii + 2]
         elif arg == "-r" or arg == "--repeat":
-            NODE_REPEAT = int(sys.argv[ii+1])
-            del sys.argv[ii:ii+2]
+            NODE_REPEAT = int(sys.argv[ii + 1])
+            del sys.argv[ii:ii + 2]
         else:
             ii = ii + 1
     unittest.main()

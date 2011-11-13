@@ -7,6 +7,8 @@ from history import History
 _logger = logging.getLogger('dynamo')
 
 DEFAULT_PRIORITY = 10
+
+
 def _priority(tmsg):
     priority = DEFAULT_PRIORITY
     node = tmsg.from_node
@@ -14,14 +16,15 @@ def _priority(tmsg):
         priority = int(node.__class__.__dict__['timer_priority'])
     return priority
 
+
 class Timer:
     # List of pending timers, maintained in order of priority then insertion
-    pending = [] # list of (priority, tmsg) tuples
+    pending = []  # list of (priority, tmsg) tuples
 
     @classmethod
     def pending_count(cls):
         return len(cls.pending)
-    
+
     @classmethod
     def reset(cls):
         cls.pending = []
@@ -29,11 +32,12 @@ class Timer:
     @classmethod
     def start_timer(cls, node, reason=None, callback=None, priority=None):
         """Start a timer for the given node, with an option reason code"""
-        if node.failed: return None
+        if node.failed:
+            return None
         tmsg = TimerMessage(node, reason, callback=callback)
         _logger.debug("Start timer %s for node %s reason %s", id(tmsg), node, reason)
         History.add("start", tmsg)
-        if priority is None: # default to priority of the node
+        if priority is None:  # default to priority of the node
             priority = _priority(tmsg)
         # Figure out where in the list to insert
         for ii in range(len(cls.pending)):
@@ -42,7 +46,7 @@ class Timer:
                 return tmsg
         cls.pending.append((priority, tmsg))
         return tmsg
-    
+
     @classmethod
     def cancel_timer(cls, tmsg):
         """Cancel the given timer"""
@@ -52,13 +56,14 @@ class Timer:
                 cls.pending.remove((this_prio, this_tmsg))
                 History.add("cancel", tmsg)
                 return
-            
+
     @classmethod
     def pop_timer(cls):
         """Pop the first pending timer"""
         while True:
             (_, tmsg) = cls.pending.pop(0)
-            if tmsg.from_node.failed: continue
+            if tmsg.from_node.failed:
+                continue
             _logger.debug("Pop timer %s for node %s reason %s", id(tmsg), tmsg.from_node, tmsg.reason)
             History.add("pop", tmsg)
             if tmsg.callback is None:
@@ -67,4 +72,3 @@ class Timer:
             else:
                 tmsg.callback(tmsg.reason)
             return
-

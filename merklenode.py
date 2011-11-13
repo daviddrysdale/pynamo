@@ -11,6 +11,7 @@ from merkle import MerkleTree
 logconfig.init_logging()
 _logger = logging.getLogger('merkle')
 
+
 # PART merklenode
 class DynamoNode(Node):
 
@@ -18,5 +19,7 @@ class DynamoNode(Node):
         Node.__init__(self)
 
     def rcvmsg(self, msg):
-        if isinstance(msg, ClientPut): self.rcv_clientput(msg)
-        else: raise TypeError("Unexpected message type %s", msg.__class__)
+        if isinstance(msg, ClientPut):
+            self.rcv_clientput(msg)
+        else:
+            raise TypeError("Unexpected message type %s", msg.__class__)
