@@ -5,32 +5,36 @@ import binascii
 import bisect
 
 
-class ConsistentHashTable(object):
+class SimpleConsistentHashTable(object):
     def __init__(self, nodelist):
         """Initialize a consistent hash table for the given list of nodes"""
         baselist = [(hashlib.md5(str(node)).digest(), node) for node in nodelist]
-        # Build two lists: one of (hashvalue, node) pairs, sorted by hashvalue
-        # One of just the hashvalues, to allow use of bisect.
+        # Build two lists: one of (hashvalue, node) pairs, sorted by
+        # hashvalue, one of just the hashvalues, to allow use of bisect.
         self.nodelist = sorted(baselist, key=lambda x: x[0])
         self.hashlist = [hashnode[0] for hashnode in self.nodelist]
 
     def find_nodes(self, key, count=1, avoid=None):
-        """Return a list of nodes whose hashes are consecutively after the hash of the given key.
+        """Return a list of count nodes from the hash table that are
+        consecutively after the hash of the given key.
 
-        Returned list size is count, and any nodes in the avoid collection are not included."""
+        Returned list size is <= count, and any nodes in the avoid collection
+        are not included."""
         if avoid is None:  # Use an empty set
             avoid = set()
-        # Hash the key
+        # Hash the key to find where it belongs on the ring
         hv = hashlib.md5(str(key)).digest()
-        # Find the node after this hash value
+        # Find the node after this hash value around the ring, as an index
+        # into self.hashlist/self.nodelist
         initial_index = bisect.bisect(self.hashlist, hv)
         next_index = initial_index
         results = []
         while len(results) < count:
             if next_index == len(self.nodelist):  # Wrap round to the start
                 next_index = 0
-            if self.nodelist[next_index][1] not in avoid:
-                results.append(self.nodelist[next_index][1])
+            node = self.nodelist[next_index][1]
+            if node not in avoid:
+                results.append(node)
             next_index = next_index + 1
             if next_index == initial_index:
                 # Gone all the way around -- terminate loop regardless
@@ -38,7 +42,9 @@ class ConsistentHashTable(object):
         return results
 
     def __str__(self):
-        return ",".join(["(%s, %s)" % (binascii.hexlify(nodeinfo[0]), nodeinfo[1]) for nodeinfo in self.nodelist])
+        return ",".join(["(%s, %s)" %
+                         (binascii.hexlify(nodeinfo[0]), nodeinfo[1])
+                         for nodeinfo in self.nodelist])
 
 # -----------IGNOREBEYOND: test code ---------------
 import sys
@@ -52,16 +58,19 @@ class HashSimpleTestCase(unittest.TestCase):
     """Test simple consistent hashing class"""
 
     def setUp(self):
-        self.c1 = ConsistentHashTable(('A', 'B', 'C'))
+        self.c1 = SimpleConsistentHashTable(('A', 'B', 'C'))
         num_nodes = 50
         self.nodeset = set()
         while len(self.nodeset) < num_nodes:
             node = random_3letters()
             self.nodeset.add(node)
-        self.c2 = ConsistentHashTable(self.nodeset)
+        self.c2 = SimpleConsistentHashTable(self.nodeset)
 
     def testSmallExact(self):
-        self.assertEqual(str(self.c1), "(0d61f8370cad1d412f80b84d143e1257, C),(7fc56270e7a70fa81a5935b72eacbe29, A),(9d5ed678fe57bcca610140957afab571, B)")
+        self.assertEqual(str(self.c1),
+                         "(0d61f8370cad1d412f80b84d143e1257, C),"
+                         "(7fc56270e7a70fa81a5935b72eacbe29, A),"
+                         "(9d5ed678fe57bcca610140957afab571, B)")
         self.assertEqual(self.c1.find_nodes('splurg', 2), ['A', 'B'])
         self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A',)), ['B', 'C'])
         self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A', 'B')), ['C'])
@@ -109,10 +118,12 @@ class HashSimpleTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    for ii in range(1, len(sys.argv) - 1):  # pragma: no cover
+    ii = 1
+    while ii < len(sys.argv):  # pragma: no cover
         arg = sys.argv[ii]
         if arg == "-s" or arg == "--seed":
             random.seed(sys.argv[ii + 1])
             del sys.argv[ii:ii + 2]
-            break
+        else:
+            ii += 1
     unittest.main()

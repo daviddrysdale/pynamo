@@ -42,7 +42,7 @@ This means I can more easily test different scenarios and track what's going on 
 <p>
 For my final proviso, I should point out that I'm not going to explain much about the original ideas in the
 Dynamo paper, which are generally explained perfectly clearly.  In other words, this page <b>assumes
-you're read the original paper</b>.
+you're read the original paper</b> and that you have it close to hand when you're reading this.
 </p>
 <p>
 Structurally, we'll start by exploring some of the building blocks used in the design, then start building up
@@ -71,7 +71,7 @@ the Dynamo software step by step.
 <a name="consistent_hash"><h2>Partitioning Algorithm (Section 4.2/4.3)</h2></a>
 <p>
 The first area to explore is the consistent hashing algorithm described in section 4.2 of the paper.
-The constructor for the <code>ConsistentHashTable</code> builds up the list of nodes, and the 
+The constructor for the <code>ConsistentHashTable</code> class builds up the list of nodes, and the
 <code>find_nodes</code> method returns the <i>preference list</i> of nodes for the key (where the first
 entry in the list is the <i>coordinator</i>). 
 </p>

@@ -11,19 +11,26 @@ class ConsistentHashTable(object):
         # Insert each node into the hash circle multiple times
         baselist = []
         for node in nodelist:
-            for ii in range(repeat):
-                nodestring = str(node) + (":%d" % ii)
+            for ii in xrange(repeat):
+                nodestring = "%s:%d" % (node, ii)
                 baselist.append((hashlib.md5(nodestring).digest(), node))
-        # Build two lists: one of (hashvalue, node) pairs, sorted by hashvalue
-        # One of just the hashvalues, to allow use of bisect.
+        # Build two lists: one of (hashvalue, node) pairs, sorted by
+        # hashvalue, one of just the hashvalues, to allow use of bisect.
         self.nodelist = sorted(baselist, key=lambda x: x[0])
         self.hashlist = [hashnode[0] for hashnode in self.nodelist]
 
     def find_nodes(self, key, count=1, avoid=None):
-        """Return a list of count nodes from the hash table that are consecutively after the hash of the given key"""
-        hv = hashlib.md5(str(key)).digest()
+        """Return a list of count nodes from the hash table that are
+        consecutively after the hash of the given key.
+
+        Returned list size is <= count, and any nodes in the avoid collection
+        are not included."""
         if avoid is None:  # Use an empty set
             avoid = set()
+        # Hash the key to find where it belongs on the ring
+        hv = hashlib.md5(str(key)).digest()
+        # Find the node after this hash value around the ring, as an index
+        # into self.hashlist/self.nodelist
         initial_index = bisect.bisect(self.hashlist, hv)
         next_index = initial_index
         results = []
@@ -40,7 +47,9 @@ class ConsistentHashTable(object):
         return results
 
     def __str__(self):
-        return ",".join(["(%s, %s)" % (binascii.hexlify(nodeinfo[0]), nodeinfo[1]) for nodeinfo in self.nodelist])
+        return ",".join(["(%s, %s)" %
+                         (binascii.hexlify(nodeinfo[0]), nodeinfo[1])
+                         for nodeinfo in self.nodelist])
 
 # -----------IGNOREBEYOND: test code ---------------
 import sys
@@ -130,5 +139,5 @@ if __name__ == "__main__":
             NODE_REPEAT = int(sys.argv[ii + 1])
             del sys.argv[ii:ii + 2]
         else:
-            ii = ii + 1
+            ii += 1
     unittest.main()
