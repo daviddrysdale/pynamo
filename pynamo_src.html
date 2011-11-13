@@ -299,14 +299,7 @@ print (v3 < converged_clock)
 
     <a name="simple_get"><h2><b>Get</b>ting it Back</h2></a>
     <p>
-      After seeing the <b>Put</b> infrastructure, the <b>Get</b> infrastructure is pretty straightforward.
-      The main difference here is that whichever node first receives the client request coordinates the whole
-      business, whether or not it itself is on the preference list for the key.
-    </p>
-    <p>
-      So a client get request arrives at a node, which fans it out to <b>N</b> nodes on the preference list
-      &ndash; which may or may not involve the node sending a message to itself, depending on whether it is on
-      the preference list.
+      After seeing the <b>Put</b> infrastructure, the <b>Get</b> infrastructure is pretty similar.
     </p>
 #include dynamo1.py:rcv_clientget
     <p>

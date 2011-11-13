@@ -74,17 +74,24 @@ class DynamoNode(Node):
 # PART rcv_clientget
     def rcv_clientget(self, msg):
         preference_list = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N)
-        seqno = self.generate_sequence_number()
-        self.pending_get_rsp[seqno] = set()
-        self.pending_get_msg[seqno] = msg
-        reqcount = 0
-        for node in preference_list:
-            getmsg = GetReq(self, node, msg.key, msg_id=seqno)
-            Framework.send_message(getmsg)
-            reqcount = reqcount + 1
-            if reqcount >= DynamoNode.N:
-                # preference_list may have more than N entries to allow for failed nodes
-                break
+        # Determine if we are in the list
+        if self not in preference_list:
+            # Forward to the coordinator for this key
+            _logger.info("get(%s=?) maps to %s", msg.key, preference_list)
+            coordinator = preference_list[0]
+            Framework.forward_message(msg, coordinator)
+        else:
+            seqno = self.generate_sequence_number()
+            self.pending_get_rsp[seqno] = set()
+            self.pending_get_msg[seqno] = msg
+            reqcount = 0
+            for node in preference_list:
+                getmsg = GetReq(self, node, msg.key, msg_id=seqno)
+                Framework.send_message(getmsg)
+                reqcount = reqcount + 1
+                if reqcount >= DynamoNode.N:
+                    # preference_list may have more than N entries to allow for failed nodes
+                    break
 
 # PART rcv_put
     def rcv_put(self, putmsg):
