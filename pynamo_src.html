@@ -52,14 +52,14 @@
     <h3>Contents</h3>
     <ul>
       <li><a href="#consistent_hash">Building Block: Consistent Hashing (s4.2/s4.3)</a></li>
-      <li><a href="#vector_clock">Building Block: Vector Clocks (s4.4)</a></li>
       <li><a href="#simple_put"><b>Put</b>ting It Together</a></li>
       <li><a href="#simple_get"><b>Get</b>ting it Back</a></li>
       <li><a href="#failure">Coping With Failure</a></li>
-      <li><a href="#faildetect">Failure Detection (s4.8.3)</a></li>
-      <li><a href="#failrecover">Failure Recovery</a></li>
-      <li><a href="#catchup">Catchup</a></li>
+      <li><a href="#faildetect">Node Failure Detection (s4.8.3)</a></li>
+      <li><a href="#failrecover">Node Recovery Detection</a></li>
       <li><a href="#merkle">Building Block: Merkle Trees (s4.7)</a></li>
+      <li><a href="#catchup">Catchup</a></li>
+      <li><a href="#vector_clock">Building Block: Vector Clocks (s4.4)</a></li>
       <li><a href="#divergence">Detecting Divergence</a></li>
       <li><a href="#divergence_repair">Repairing Divergence</a></li>
       <li><a href="#other_errors">Other Error Cases</a></li>
@@ -125,101 +125,6 @@
       So the multiple node approach has lead to a much less 'lumpy' distribution of keys.
     </p>
     
-    <a name="vector_clock"><h2>Building Block: Vector Clocks (s4.4)</h2></a>
-    <p>
-      A vector clock is easy to implement; it's basically a dictionary whose keys are nodes and whose values
-      are the last-seen sequence number for that node.
-    </p>
-#include vectorclock.py:coreclass
-    <p>
-      We can add entries to the vector clock, simulating different nodes and their counters, with one proviso: a
-      node's counter isn't allowed to go backwards.
-    </p>
-#python
-from vectorclock import VectorClock
-v = VectorClock()
-print v
-v.update('A', 1)
-print v
-v.update('A', 3)
-print v
-v.update('B', 1001)
-print v
-v.update('B', 1002)
-print v
-v.update('B', 1)
-#endpython
-    <p>
-      We can also define an ordering operation <b>&lt;</b> on vector clocks
-      (together with all the other comparison operations) by adding the relevant 
-      <a href="http://www.python.org/dev/peps/pep-0207/">rich comparison</a> methods 
-      to the <code>VectorClock</code> class.
-    </p>
-#include vectorclock.py:comparisons
-    <p>
-      This is a <a href="http://en.wikipedia.org/wiki/Partially_ordered_set">partial order</a>:
-    </p>
-    <ul>
-      <li>it's reflexive: <code>a &lt;= a</code> always holds (because <code>a==a</code>)</li>
-      <li>it's antisymmetric: if <code>a &lt; b</code> and <code>b &lt; a</code>, then <code>a==b</code></li>
-      <li>it's transitive: if <code>a &lt; b</code> and <code>b &lt; c</code>, then <code>a &lt;= c</code></li>
-    </ul>
-    <p>
-      but it's not a <a href="http://en.wikipedia.org/wiki/Total_order">total order</a> &ndash; it's possible
-      for neither <code>a &lt; b</code> nor <code>b &lt; a</code> to hold.
-    </p>
-#python
-from vectorclock import VectorClock
-v1 = VectorClock().update('A', 1).update('B', 2)
-v2 = VectorClock().update('A', 2).update('B', 3)
-print (v1 < v2)
-v3 = VectorClock().update('X', 1).update('Y', 2)
-print (v1 < v3)
-print (v3 < v1)
-#endpython
-    <p>
-      This partial order forms the basis for the more important thing we can do with vector clocks &ndash;
-      combine them.
-    </p>
-#include vectorclock.py:coalesce
-    <p>
-      This operation folds together those vector clocks that are direct ancestors of each other, but
-      keeping separate those that are not.
-    </p>
-#python
-print v1, v2, v3
-diverged_clocks = VectorClock.coalesce((v1, v2, v3))
-for vc in diverged_clocks: print vc
-print (diverged_clocks[0] < diverged_clocks[1])
-print (diverged_clocks[1] < diverged_clocks[0])
-#endpython
-    <p>
-      Finally, we need to be able to build a single vector clock that has an arbitrary set of direct
-      ancestors; in other words, a way of reconverging a divergent set of vector clocks.
-    </p>
-#include vectorclock.py:converge
-    <p>
-      The Dynamo system doesn't (and can't) solve the general problem of resolving inconsistencies; that's
-      pushed out to the code that uses the system, and which is aware of the meaning of the data that is
-      opaque to Dynamo.  But when that application code has resolved an inconsistency,
-      this <code>converge</code> method builds a vector clock that makes it clear that the inconsistency
-      has been resolved.
-    </p>
-#python
-converged_clock = VectorClock.converge(diverged_clocks)
-print converged_clock
-print (v1 < converged_clock)
-print (v2 < converged_clock)
-print (v3 < converged_clock)
-#endpython
-    <p>
-      The Dynamo paper also discusses the problem that the size of vector clocks can become large as more and
-      more nodes get involved in the history of changes to a particular key/value.  To get around this, they
-      suggest keeping a timestamp along with the sequence number, and throwing away the oldest entry in a
-      vector clock when it has more than 10 entries.  This is easily implemented as a subclass
-      of <code>VectorClock</code>, but we won't bother using this variant from here on.
-    </p>
-#include vectorclockt.py
 
     <a name="simple_put"><h2><b>Put</b>ting It Together</h2></a>
     <p>
@@ -348,14 +253,14 @@ print (v3 < converged_clock)
       <li><b>Catchup</b>: When a node recovers after a failure, it is out-of-sync and needs to catch up with
         the rest of the network.</li>
       <li><b>Detecting Divergence</b>: If a failure (particularly a network partition) resulted in the values
-        for a particular key having inconsistent values, we need to detect this, using the vector
-        clocks <a href="#vector_clock">described above</a>.</li>
+        for a particular key having inconsistent values, we need to detect this,
+        using <a href="#vector_clock">vector clocks</a>.</li>
       <li><b>Repairing Divergence</b>: Once the values for a key have diverged, the Dynamo network isn't able
         to figure out how to repair the divergence itself, and so it has to push the problem up to the client
         software.</li>
     </ul>
     
-    <a name="faildetect"><h2>Failure Detection (Section 4.8.3)</h2></a>
+    <a name="faildetect"><h2>Node Failure Detection (Section 4.8.3)</h2></a>
     <p>
       The first step in coping with failure is detecting it.  The message-sending framework we're using can
       automatically start a timer for any request message that is sent, and after a suitable period without a
@@ -412,7 +317,7 @@ print (v3 < converged_clock)
 #result python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_2
     </pre></div>
     
-    <a name="failrecover"><h2>Failure Recovery Detection</h2></a>
+    <a name="failrecover"><h2>Node Recovery Detection</h2></a>
     <p>
       Of course, nodes that have failed may recover.  To keep an eye out for this, we periodically check a
       node that has failed to see if it has recovered.
@@ -431,14 +336,6 @@ print (v3 < converged_clock)
     <div class="highlight"><pre>
 #result python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_4
     </pre></div>
-
-    <a name="catchup"><h2>Catchup</h2></a>
-    <p>
-      Examine the last line of the previous diagram: the different nodes that have been involved in storing
-      values for the key along the way now have a different idea of what the most up-to-date value for that
-      key is.
-    </p>
-    ???
 
     <a name="merkle"><h2>Building Block: Merkle Trees (s4.7)</h2></a>
     <p>
@@ -500,6 +397,110 @@ print mtree.root.value.hexdigest()
 #endpython
 
 
+
+    <a name="catchup"><h2>Catchup</h2></a>
+    <p>
+      Examine the last line of the previous diagram: the different nodes that have been involved in storing
+      values for the key along the way now have a different idea of what the most up-to-date value for that
+      key is.
+    </p>
+    ???
+
+    <a name="vector_clock"><h2>Building Block: Vector Clocks (s4.4)</h2></a>
+    <p>
+      A vector clock is easy to implement; it's basically a dictionary whose keys are nodes and whose values
+      are the last-seen sequence number for that node.
+    </p>
+#include vectorclock.py:coreclass
+    <p>
+      We can add entries to the vector clock, simulating different nodes and their counters, with one proviso: a
+      node's counter isn't allowed to go backwards.
+    </p>
+#python
+from vectorclock import VectorClock
+v = VectorClock()
+print v
+v.update('A', 1)
+print v
+v.update('A', 3)
+print v
+v.update('B', 1001)
+print v
+v.update('B', 1002)
+print v
+v.update('B', 1)
+#endpython
+    <p>
+      We can also define an ordering operation <b>&lt;</b> on vector clocks
+      (together with all the other comparison operations) by adding the relevant 
+      <a href="http://www.python.org/dev/peps/pep-0207/">rich comparison</a> methods 
+      to the <code>VectorClock</code> class.
+    </p>
+#include vectorclock.py:comparisons
+    <p>
+      This is a <a href="http://en.wikipedia.org/wiki/Partially_ordered_set">partial order</a>:
+    </p>
+    <ul>
+      <li>it's reflexive: <code>a &lt;= a</code> always holds (because <code>a==a</code>)</li>
+      <li>it's antisymmetric: if <code>a &lt; b</code> and <code>b &lt; a</code>, then <code>a==b</code></li>
+      <li>it's transitive: if <code>a &lt; b</code> and <code>b &lt; c</code>, then <code>a &lt;= c</code></li>
+    </ul>
+    <p>
+      but it's not a <a href="http://en.wikipedia.org/wiki/Total_order">total order</a> &ndash; it's possible
+      for neither <code>a &lt; b</code> nor <code>b &lt; a</code> to hold.
+    </p>
+#python
+from vectorclock import VectorClock
+v1 = VectorClock().update('A', 1).update('B', 2)
+v2 = VectorClock().update('A', 2).update('B', 3)
+print (v1 < v2)
+v3 = VectorClock().update('X', 1).update('Y', 2)
+print (v1 < v3)
+print (v3 < v1)
+#endpython
+    <p>
+      This partial order forms the basis for the more important thing we can do with vector clocks &ndash;
+      combine them.
+    </p>
+#include vectorclock.py:coalesce
+    <p>
+      This operation folds together those vector clocks that are direct ancestors of each other, but
+      keeping separate those that are not.
+    </p>
+#python
+print v1, v2, v3
+diverged_clocks = VectorClock.coalesce((v1, v2, v3))
+for vc in diverged_clocks: print vc
+print (diverged_clocks[0] < diverged_clocks[1])
+print (diverged_clocks[1] < diverged_clocks[0])
+#endpython
+    <p>
+      Finally, we need to be able to build a single vector clock that has an arbitrary set of direct
+      ancestors; in other words, a way of reconverging a divergent set of vector clocks.
+    </p>
+#include vectorclock.py:converge
+    <p>
+      The Dynamo system doesn't (and can't) solve the general problem of resolving inconsistencies; that's
+      pushed out to the code that uses the system, and which is aware of the meaning of the data that is
+      opaque to Dynamo.  But when that application code has resolved an inconsistency,
+      this <code>converge</code> method builds a vector clock that makes it clear that the inconsistency
+      has been resolved.
+    </p>
+#python
+converged_clock = VectorClock.converge(diverged_clocks)
+print converged_clock
+print (v1 < converged_clock)
+print (v2 < converged_clock)
+print (v3 < converged_clock)
+#endpython
+    <p>
+      The Dynamo paper also discusses the problem that the size of vector clocks can become large as more and
+      more nodes get involved in the history of changes to a particular key/value.  To get around this, they
+      suggest keeping a timestamp along with the sequence number, and throwing away the oldest entry in a
+      vector clock when it has more than 10 entries.  This is easily implemented as a subclass
+      of <code>VectorClock</code>, but we won't bother using this variant from here on.
+    </p>
+#include vectorclockt.py
     <a name="divergence"><h2>Detecting Divergence</h2></a>
     <p>
       Of course, it's not just nodes that can fail &ndash; sometimes, the links between them fail too.  The
