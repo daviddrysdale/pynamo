@@ -423,8 +423,62 @@ for the key along the way now have a different idea of what the most up-to-date 
 ???
 
 <a name="merkle"><h2>Building Block: Merkle Trees (s4.7)</h2></a>
+<p>
+A Merkle tree is a tree structure describing a data set where
+</p>
+<ul>
+  <li>each leaf node of the tree has a value that is the hash of some subset of the data</li>
+  <li>each branch node of the tree is a hash of its children.</li>
+</ul>
+<p>
+This allows differences between two versions of the same data set to be detected quickly:
+<ul>
+ <li>If the roots of two trees have the same hash value, all of the nodes below them in the tree must be the same</li>
+ <li>If the roots of two trees have different hash values, we can recursively examine their children to locate the differences</li>
+ <li>If two leaf nodes have different values, their data subsets differ</li>
+</ul>
+<p>
+The core of this data structure, dealing with non-leaf nodes, is fairly generic:
+</p>
+#include <merkle.py:coretree>
+<p>
+The overall tree and the leaf nodes are more tailored to our particular problem.
+The data set we are trying to keep in sync is the key-value store at a Dynamo node &ndash; or to be more
+specific, a subrange of the keyspace for that store.  To allow the subranges to be manipulated, first we set
+up a utility function that maps the MD5 hash of the key onto 128-bit integers.
+</p>
+#include <merkle.py:keyhash>
+<p>
+Our overall tree covers a particular subrange of keys, and if the tree's depth is <b>D</b> we will have 
+2<sup>D</sup> leaf nodes, each of which covers an sub-subrange of the keyspace.  
+</p>
+#include <merkle.py:leafnode>
+<p>
+The overall <code>MerkleTree</code> class then builds the appropriate number of leaves, and their parents.
+</p>
+#include <merkle.py:tree>
+<p>
+Given that we want to allow the data held in the tree to change, the ideal thing is for this data structure to
+appear like an ordinary Python <code>dict</code>.  Defining a useful <code>_findleaf</code> method allows us
+to set up all of the various container methods that 
+<a href="http://docs.python.org/library/userdict.html#UserDict.DictMixin">allow this to happen</a>:
+</p>
+#include <merkle.py:container>
+<p>
+With this, the Merkle tree looks like a normal <code>dict</code>.
+</p>
+#python
+from merkle import MerkleTree
+mtree = MerkleTree()
+mtree['a'] = 1
+mtree['b'] = 2
+print mtree['a']
+print mtree.root.value.hexdigest()
+del mtree['a']
+print 'a' in mtree
+print mtree.root.value.hexdigest()
+#endpython
 
-???
 
 <a name="divergence"><h2>Detecting Divergence</h2></a>
 <p>

@@ -4,6 +4,7 @@ import hashlib
 from UserDict import DictMixin
 
 
+# PART keyhash
 def keyhash(key):
     """Return a 128-bit integer associated with a key"""
     hashval = hashlib.md5(str(key))
@@ -11,53 +12,14 @@ def keyhash(key):
     return long(hashval.hexdigest(), 16)
 
 
+# PART coretree
 class MerkleTreeNode(object):
     def __init__(self):
         self.value = None
         self.parent = None
 
-
-class MerkleLeaf(MerkleTreeNode):
-    """Leaf node in Merkle tree, encompassing all keys in range [min_key, max_key)"""
-    def __init__(self, min_key, max_key, initdata=None):
-        super(MerkleLeaf, self).__init__()
-        self.min_key = min_key
-        self.max_key = max_key
-        self.data = dict()
-        if initdata is not None:
-            # Copy in any keys whose hash falls in range for this node
-            for key, value in initdata.items():
-                hashval = keyhash(key)
-                if hashval >= self.min_key and hashval < self.max_key:
-                    self.data[key] = value
-        self.value = hashlib.md5(str(self.data))
-
-    def __str__(self):
-        return "[%s,%s)=>%s" % (self.min_key, self.max_key, self.value.hexdigest()[:6])
-
-    def _check(self, key):
-        """Check that the given key falls within the range of this leaf node"""
-        hashval = keyhash(key)
-        if hashval < self.min_key or hashval >= self.max_key:
-            raise KeyError("Key %s hashes to value outside range for this leaf" % key)
-
-    def __setitem__(self, key, value):
-        """Set value for key, which must be in this leaf's range."""
-        self._check(key)
-        self.data[key] = value
-        self.recalc()
-
-    def __delitem__(self, key):
-        """Delete value for key, which must be in this leaf's range."""
-        self._check(key)
-        del self.data[key]
-        self.recalc()
-
     def recalc(self):
-        """Recalculate the Merkle value for this node, and all parent nodes"""
-        self.value = hashlib.md5(str(self.data))
-        if self.parent is not None:
-            self.parent.recalc()
+        raise NotImplementedError("Subclasses should implement this method")
 
 
 class MerkleBranchNode(MerkleTreeNode):
@@ -81,6 +43,35 @@ class MerkleBranchNode(MerkleTreeNode):
         return self.value.hexdigest()[:6]
 
 
+# PART leafnode
+class MerkleLeaf(MerkleTreeNode):
+    """Leaf node in Merkle tree, encompassing all keys in subrange [min_key, max_key)"""
+    def __init__(self, min_key, max_key, initdata=None):
+        super(MerkleLeaf, self).__init__()
+        self.min_key = min_key
+        self.max_key = max_key
+        # Copy in any keys whose hash falls in range for this node
+        if initdata is None:
+            self._data = {}
+        else:
+            self._data = dict([(key, value) for key, value in initdata.items() if self._inrange(key)])
+        self.value = hashlib.md5(str(self._data))
+
+    def __str__(self):
+        return "[%s,%s)=>%s" % (self.min_key, self.max_key, self.value.hexdigest()[:6])
+
+    def _inrange(self, key):
+        """Determine whether the given key falls within the subrange of this leaf node"""
+        hashval = keyhash(key)
+        return hashval >= self.min_key and hashval < self.max_key
+
+    def recalc(self):
+        """Recalculate the Merkle value for this node, and all parent nodes"""
+        self.value = hashlib.md5(str(self._data))
+        self.parent.recalc()
+
+
+# PART tree
 class MerkleTree(DictMixin):
     def __init__(self, depth=12, min_key=0, max_key=(2 ** 128 - 1), initdata=None):
         """Build a Merkle tree of given depth covering keys in range [min_key, max_key)"""
@@ -95,7 +86,8 @@ class MerkleTree(DictMixin):
         self.nodes = []
         # layer 0 (bottom) of the tree is (2^depth) leaf nodes
         self.nodes.append([MerkleLeaf(self.min_key + ii * self.leaf_size,
-                                      self.min_key + (ii + 1) * self.leaf_size,
+                                      min(self.min_key + (ii + 1) * self.leaf_size,
+                                          max_key),
                                       initdata)
                            for ii in xrange(self.num_leaves)])
         # Each layer >= 1 consists of interior nodes, and is half the size
@@ -118,34 +110,36 @@ class MerkleTree(DictMixin):
 
     def __setitem__(self, key, value):
         leafidx = self._findleaf(key)
-        self.nodes[0][leafidx].data[key] = value
+        self.nodes[0][leafidx]._data[key] = value
+        self.nodes[0][leafidx].recalc()
 
     def __delitem__(self, key):
         leafidx = self._findleaf(key)
-        del self.nodes[0][leafidx].data[key]
+        del self.nodes[0][leafidx]._data[key]
+        self.nodes[0][leafidx].recalc()
 
     def __getitem__(self, key):
         leafidx = self._findleaf(key)
-        return self.nodes[0][leafidx].data[key]
+        return self.nodes[0][leafidx]._data[key]
 
     def __contains__(self, key):
         leafidx = self._findleaf(key)
-        return (key in self.nodes[0][leafidx].data)
+        return (key in self.nodes[0][leafidx]._data)
 
     def keys(self):
         results = []
         for leafidx in xrange(self.num_leaves):
-            results.extend(self.nodes[0][leafidx].data.keys())
+            results.extend(self.nodes[0][leafidx]._data.keys())
         return results
 
     def __iter__(self):
         for leafidx in xrange(self.num_leaves):
-            for key in self.nodes[0][leafidx].data:
+            for key in self.nodes[0][leafidx]._data:
                 yield key
 
     def iteritems(self):
         for leafidx in xrange(self.num_leaves):
-            for key, value in self.nodes[0][leafidx].data.items():
+            for key, value in self.nodes[0][leafidx]._data.items():
                 yield (key, value)
 
 # PART debugoutput
@@ -215,12 +209,14 @@ class MerkleTestCase(unittest.TestCase):
         for ii in xrange(10000):
             key = random_3letters()
             leafidx = x._findleaf(key)
-            x.nodes[0][leafidx]._check(key)
+            if not x.nodes[0][leafidx]._inrange(key):
+                raise KeyError("Key %s hashes to value outside range for this leaf" % key)
 
     def testDict(self):
         d1 = MerkleTree()
         d1['a'] = 1
         d1['b'] = 2
+        hash1 = d1.root.value.hexdigest()
         self.assertEqual(d1['a'], 1)
         self.assertEqual(d1['b'], 2)
         self.assertEqual(len(d1), 2)
@@ -228,6 +224,7 @@ class MerkleTestCase(unittest.TestCase):
         self.assertTrue('b' in d1)
         self.assertFalse('c' in d1)
         del d1['a']
+        self.assertNotEqual(hash1, d1.root.value.hexdigest())
         self.assertRaises(KeyError, d1.__getitem__, *('a',))
         self.assertEqual(d1['b'], 2)
         self.assertEqual(len(d1), 1)
