@@ -180,6 +180,7 @@ This operation folds together those vector clocks that are direct ancestors of e
 that are not.
 </p>
 #python
+print v1, v2, v3
 diverged_clocks = VectorClock.coalesce((v1, v2, v3))
 for vc in diverged_clocks: print vc
 print (diverged_clocks[0] < diverged_clocks[1])
@@ -191,8 +192,10 @@ other words, a way of reconverging a divergent set of vector clocks.
 </p>
 #include <vectorclock.py:converge>
 <p>
-Code that uses Dynamo needs to be able to resolve inconsistencies itself.  When it has done so, the new value
-for the key needs a vector clock that makes it clear that the inconsistency has been resolved.
+The Dynamo system doesn't (and can't) solve the general problem of resolving inconsistencies; that's pushed
+out to the code that uses Dynamo, which is aware of the meaning of the data that is opaque to Dynamo.  But
+when that application code has resolved an inconsistency, this <code>converge</code> method builds a vector
+clock that makes it clear that the inconsistency has been resolved.
 </p>
 #python
 converged_clock = VectorClock.converge(diverged_clocks)

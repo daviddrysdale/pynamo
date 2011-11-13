@@ -17,8 +17,8 @@ class VectorClock(object):
         return self
 
     def __str__(self):
-        return "{%s}" % ",".join(["%s:%d" % (node, self.clock[node])
-                                  for node in sorted(self.clock.keys())])
+        return "{%s}" % ", ".join(["%s:%d" % (node, self.clock[node])
+                                   for node in sorted(self.clock.keys())])
 
 # PART comparisons
     # Comparison operations. Vector clocks are partially ordered, but not totally ordered.
@@ -53,21 +53,21 @@ class VectorClock(object):
         The result is a list of VectorClocks; each input VectorClock is a direct
         ancestor of one of the results, and no result entry is a direct ancestor
         of any other result entry."""
-        result = []
+        results = []
         for vc in vcs:
             # See if this vector-clock subsumes or is subsumed by anything already present
             subsumed = False
-            for ii in range(len(result)):
-                if vc <= result[ii]:  # subsumed by existing answer
+            for ii, result in enumerate(results):
+                if vc <= result:  # subsumed by existing answer
                     subsumed = True
                     break
-                if result[ii] < vc:  # replace existing answer
-                    result[ii] = copy.deepcopy(vc)
+                if result < vc:  # subsumes existing answer so replace it
+                    results[ii] = copy.deepcopy(vc)
                     subsumed = True
                     break
             if not subsumed:
-                result.append(copy.deepcopy(vc))
-        return result
+                results.append(copy.deepcopy(vc))
+        return results
 
 # PART converge
     @classmethod
@@ -103,7 +103,7 @@ class VectorClockTestCase(unittest.TestCase):
         self.c1.update('A', 200)
         self.assertEquals(str(self.c1), "{A:200}")
         self.c1.update('B', 1)
-        self.assertEquals(str(self.c1), "{A:200,B:1}")
+        self.assertEquals(str(self.c1), "{A:200, B:1}")
 
     def testInternalError(self):
         self.assertRaises(Exception, self.c2.update, 'B', 1)
@@ -151,9 +151,9 @@ class VectorClockTestCase(unittest.TestCase):
         c3.update('X', 200)
         self.c1.update('Y', 100)
         cx = VectorClock.converge((self.c1, self.c2, c3, c4))
-        self.assertEquals(str(cx), "{A:1,B:2,X:200,Y:100}")
+        self.assertEquals(str(cx), "{A:1, B:2, X:200, Y:100}")
         cy = VectorClock.converge(VectorClock.coalesce((self.c1, self.c2, c3, c4)))
-        self.assertEquals(str(cy), "{A:1,B:2,X:200,Y:100}")
+        self.assertEquals(str(cy), "{A:1, B:2, X:200, Y:100}")
 
 
 if __name__ == "__main__":
