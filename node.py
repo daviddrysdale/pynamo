@@ -5,7 +5,7 @@ from message import NodeAction
 _logger = logging.getLogger('dynamo')
 
 
-class Node:
+class Node(object):
     """Node that can send and receive messages."""
     # Class-wide tracking of all Nodes
     count = 0

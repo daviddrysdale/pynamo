@@ -1,7 +1,7 @@
 """Python code implementing messages between nodes in an arbitrary network"""
 
 
-class Message:
+class Message(object):
     """Base type for messages between Nodes"""
     def __init__(self, from_node, to_node, msg_id=None):
         self.from_node = from_node

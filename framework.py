@@ -13,7 +13,7 @@ logconfig.init_logging()
 _logger = logging.getLogger('dynamo')
 
 
-class Framework:
+class Framework(object):
     cuts = []  # List of incommunicado sets of nodes
     queue = deque([])  # queue of pending messages
     pending_timers = {}  # request_message => timer

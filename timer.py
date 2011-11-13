@@ -17,7 +17,7 @@ def _priority(tmsg):
     return priority
 
 
-class Timer:
+class Timer(object):
     # List of pending timers, maintained in order of priority then insertion
     pending = []  # list of (priority, tmsg) tuples
 

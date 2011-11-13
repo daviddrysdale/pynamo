@@ -9,7 +9,7 @@ def random_3letters():
             chr(ord('A') + random.randint(0, 25)))
 
 
-class Stats:
+class Stats(object):
     def __init__(self):
         self.total = 0.0
         self.values = []

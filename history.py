@@ -5,7 +5,7 @@ import logging
 _logger = logging.getLogger('dynamo')
 
 
-class History:
+class History(object):
     """
     History of everything that happened in the framework, as a list of (action, object) pairs.
 

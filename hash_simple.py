@@ -5,7 +5,7 @@ import binascii
 import bisect
 
 
-class ConsistentHashTable:
+class ConsistentHashTable(object):
     def __init__(self, nodelist):
         """Initialize a consistent hash table for the given list of nodes"""
         baselist = [(hashlib.md5(str(node)).digest(), node) for node in nodelist]
