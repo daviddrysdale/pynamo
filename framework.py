@@ -5,7 +5,7 @@ from collections import deque
 
 from node import Node
 from history import History
-from timer import Timer
+from timer import TimerManager
 from message import ResponseMessage
 import logconfig
 
@@ -45,13 +45,13 @@ class Framework(object):
             not isinstance(msg, ResponseMessage) and
             'rsp_timer_pop' in msg.from_node.__class__.__dict__ and
             callable(msg.from_node.__class__.__dict__['rsp_timer_pop'])):
-            cls.pending_timers[msg] = Timer.start_timer(msg.from_node, reason=msg, callback=Framework.rsp_timer_pop)
+            cls.pending_timers[msg] = TimerManager.start_timer(msg.from_node, reason=msg, callback=Framework.rsp_timer_pop)
 
     @classmethod
     def remove_req_timer(cls, reqmsg):
         if reqmsg in cls.pending_timers:
             # Cancel request timer as we've seen a response
-            Timer.cancel_timer(cls.pending_timers[reqmsg])
+            TimerManager.cancel_timer(cls.pending_timers[reqmsg])
             del cls.pending_timers[reqmsg]
 
     @classmethod
@@ -82,7 +82,7 @@ class Framework(object):
 
         while cls._work_to_do():
             _logger.info("Start of schedule: %d (limit %d) pending messages, %d (limit %d) pending timers",
-                         len(cls.queue), msgs_to_process, Timer.pending_count(), timers_to_process)
+                         len(cls.queue), msgs_to_process, TimerManager.pending_count(), timers_to_process)
             # Process all the queued up messages (which may enqueue more along the way)
             while cls.queue:
                 msg = cls.queue.popleft()
@@ -109,9 +109,9 @@ class Framework(object):
                     return
 
             # No pending messages; potentially pop a (single) timer
-            if Timer.pending_count() > 0 and timers_to_process > 0:
+            if TimerManager.pending_count() > 0 and timers_to_process > 0:
                 # Pop the first pending timer; this may enqueue work
-                Timer.pop_timer()
+                TimerManager.pop_timer()
                 timers_to_process = timers_to_process - 1
             if timers_to_process == 0:
                 return
@@ -121,7 +121,7 @@ class Framework(object):
         """Indicate whether there is work to do"""
         if cls.queue:
             return True
-        if Timer.pending_count() > 0:
+        if TimerManager.pending_count() > 0:
             return True
         return False
 
@@ -129,7 +129,7 @@ class Framework(object):
 def reset():
     """Reset all message and other history"""
     Framework.reset()
-    Timer.reset()
+    TimerManager.reset()
     History.reset()
 
 

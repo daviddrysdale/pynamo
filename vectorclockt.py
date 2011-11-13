@@ -53,9 +53,9 @@ class VectorClockTimestampTestCase(unittest.TestCase):
         self.c1.update('A', 200)
         self.assertEquals(str(self.c1), "{A:200}")
         self.c1.update('B', 1)
-        self.assertEquals(str(self.c1), "{A:200,B:1}")
+        self.assertEquals(str(self.c1), "{A:200, B:1}")
         self.c1.update('C', 4)
-        self.assertEquals(str(self.c1), "{B:1,C:4}")
+        self.assertEquals(str(self.c1), "{B:1, C:4}")
 
     def testInternalError(self):
         self.assertRaises(Exception, self.c2.update, 'B', 1)
@@ -103,9 +103,9 @@ class VectorClockTimestampTestCase(unittest.TestCase):
         c3.update('X', 200)
         self.c1.update('Y', 100)
         cx = VectorClockTimestamp.converge((self.c1, self.c2, c3, c4))
-        self.assertEquals(str(cx), "{A:1,B:2,X:200,Y:100}")
+        self.assertEquals(str(cx), "{A:1, B:2, X:200, Y:100}")
         cy = VectorClockTimestamp.converge(VectorClock.coalesce((self.c1, self.c2, c3, c4)))
-        self.assertEquals(str(cy), "{A:1,B:2,X:200,Y:100}")
+        self.assertEquals(str(cy), "{A:1, B:2, X:200, Y:100}")
 
 
 if __name__ == "__main__":

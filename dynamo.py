@@ -4,7 +4,7 @@ import logging
 
 import logconfig
 from node import Node
-from timer import Timer
+from timer import TimerManager
 from framework import Framework
 from hash_multiple import ConsistentHashTable
 from dynamomessages import ClientPut, ClientGet, ClientPutRsp, ClientGetRsp
@@ -60,7 +60,7 @@ class DynamoNode(Node):
             pingmsg = PingReq(self, node)
             Framework.send_message(pingmsg)
         # Restart the timer
-        Timer.start_timer(self, reason="retry", priority=15, callback=self.retry_failed_node)
+        TimerManager.start_timer(self, reason="retry", priority=15, callback=self.retry_failed_node)
 
     def rcv_pingreq(self, pingmsg):
         pingrsp = PingRsp(pingmsg)

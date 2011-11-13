@@ -9,7 +9,7 @@ class Message(object):
         self.msg_id = msg_id
 
     def __str__(self):
-        return "%s->%s:" % (self.from_node, self.to_node)
+        return self.__class__.__name__
 
 
 class ResponseMessage(Message):
@@ -25,16 +25,10 @@ class NodeAction(Message):
     def __init__(self, node):
         super(NodeAction, self).__init__(node, node)
 
-    def __str__(self):
-        return str(self.from_node)
 
-
-class TimerMessage(Message):
+class Timer(Message):
     """Internal message indicating a timer event at a node"""
     def __init__(self, node, reason, callback=None):
-        super(TimerMessage, self).__init__(node, node)
+        super(Timer, self).__init__(node, node)
         self.reason = reason
         self.callback = callback
-
-    def __str__(self):
-        return "Timer"

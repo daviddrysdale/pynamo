@@ -3,7 +3,6 @@ import logging
 
 import logconfig
 from node import Node
-from timer import Timer
 from framework import Framework
 from merklemessages import @@@
 from merkle import MerkleTree

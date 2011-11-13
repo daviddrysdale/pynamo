@@ -1,7 +1,7 @@
 """Timer functionality"""
 import logging
 
-from message import TimerMessage
+from message import Timer
 from history import History
 
 _logger = logging.getLogger('dynamo')
@@ -17,7 +17,7 @@ def _priority(tmsg):
     return priority
 
 
-class Timer(object):
+class TimerManager(object):
     # List of pending timers, maintained in order of priority then insertion
     pending = []  # list of (priority, tmsg) tuples
 
@@ -34,7 +34,7 @@ class Timer(object):
         """Start a timer for the given node, with an option reason code"""
         if node.failed:
             return None
-        tmsg = TimerMessage(node, reason, callback=callback)
+        tmsg = Timer(node, reason, callback=callback)
         _logger.debug("Start timer %s for node %s reason %s", id(tmsg), node, reason)
         History.add("start", tmsg)
         if priority is None:  # default to priority of the node
