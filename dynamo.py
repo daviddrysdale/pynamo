@@ -19,7 +19,7 @@ _logger = logging.getLogger('dynamo')
 # PART dynamonode
 class DynamoNode(Node):
     timer_priority = 20
-    T = 10  # Number of "tokens"/"virtual nodes"/"repeats" in consistent hash table
+    T = 10  # Number of repeats for nodes in consistent hash table
     N = 3  # Number of nodes to replicate at
     W = 2  # Number of nodes that need to reply to a write operation
     R = 2  # Number of nodes that need to reply to a read operation

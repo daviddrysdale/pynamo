@@ -1,6 +1,6 @@
 <html>
 <head>
-<title>Exploring the Dynamo Paper in Python</title>
+<title>Pynamo: Exploring the Dynamo Paper in Python</title>
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 <meta name="author" content="David Drysdale">
 <meta name="keywords" content="drysdale, Dynamo, Python">
@@ -18,7 +18,7 @@
 </script>
 </head>
 <body>
-<h1>Exploring the Dynamo Paper in Python</h1>
+<h1>Pynamo: Exploring the Dynamo Paper in Python</h1>
 <p>
 The
 <a href="http://s3.amazonaws.com/AllThingsDistributed/sosp/amazon-dynamo-sosp2007.pdf">original paper [PDF]</a> 
@@ -51,15 +51,15 @@ the Dynamo software step by step.
 
 <h3>Contents</h3>
 <ul>
-  <li><a href="#consistent_hash">Keyspace Partitioning Algorithm (Section 4.2/4.3)</a></li>
-  <li><a href="#vector_clock">Vector Clocks (Section 4.4)</a></li>
-  <li><a href="#merkle">Merkle Trees (Section 4.7)</a></li>
+  <li><a href="#consistent_hash">Building Block: Consistent Hashing (s4.2/s4.3)</a></li>
+  <li><a href="#vector_clock">Building Block: Vector Clocks (s4.4)</a></li>
   <li><a href="#simple_put"><b>Put</b>ting It Together</a></li>
   <li><a href="#simple_get"><b>Get</b>ting it Back</a></li>
   <li><a href="#failure">Coping With Failure</a></li>
-  <li><a href="#faildetect">Failure Detection (Section 4.8.3)</a></li>
+  <li><a href="#faildetect">Failure Detection (s4.8.3)</a></li>
   <li><a href="#failrecover">Failure Recovery</a></li>
   <li><a href="#catchup">Catchup</a></li>
+  <li><a href="#merkle">Building Block: Merkle Trees (s4.7)</a></li>
   <li><a href="#divergence">Detecting Divergence</a></li>
   <li><a href="#divergence_repair">Repairing Divergence</a></li>
   <li><a href="#other_errors">Other Error Cases</a></li>
@@ -68,7 +68,7 @@ the Dynamo software step by step.
 </ul>
 
 
-<a name="consistent_hash"><h2>Partitioning Algorithm (Section 4.2/4.3)</h2></a>
+<a name="consistent_hash"><h2>Building Block: Consistent Hashing (s4.2/s4.3)</h2></a>
 <p>
 The first area to explore is the consistent hashing algorithm described in section 4.2 of the paper.
 The constructor for the <code>ConsistentHashTable</code> class builds up the list of nodes, and the
@@ -122,8 +122,7 @@ For 50 nodes with <b>100</b> copies of each node in the hash ring.
   So the multiple node approach has lead to a much less 'lumpy' distribution of keys.
 </p>
 
-
-<a name="vector_clock"><h2>Vector Clocks (Section 4.4)</h2></a>
+<a name="vector_clock"><h2>Building Block: Vector Clocks (s4.4)</h2></a>
 <p>
 A vector clock is easy to implement; it's basically a dictionary whose keys are nodes
 and whose values are the last-seen sequence number for that node.
@@ -196,9 +195,9 @@ other words, a way of reconverging a divergent set of vector clocks.
 #include <vectorclock.py:converge>
 <p>
 The Dynamo system doesn't (and can't) solve the general problem of resolving inconsistencies; that's pushed
-out to the code that uses Dynamo, which is aware of the meaning of the data that is opaque to Dynamo.  But
-when that application code has resolved an inconsistency, this <code>converge</code> method builds a vector
-clock that makes it clear that the inconsistency has been resolved.
+out to the code that uses the system, and which is aware of the meaning of the data that is opaque to Dynamo.
+But when that application code has resolved an inconsistency, this <code>converge</code> method builds a
+vector clock that makes it clear that the inconsistency has been resolved.
 </p>
 #python
 converged_clock = VectorClock.converge(diverged_clocks)
@@ -216,9 +215,6 @@ won't bother using this variant from here on.
 </p>
 #include <vectorclockt.py>
 
-<a name="merkle"><h2>Merkle Trees (Section 4.7)</h2></a>
-
-???
 <a name="simple_put"><h2><b>Put</b>ting It Together</h2></a>
 <p>
 Now we're going to start to put everything together.  We're going to build on a simulated enviroment of 
@@ -416,6 +412,9 @@ for the key along the way now have a different idea of what the most up-to-date 
 </p>
 ???
 
+<a name="merkle"><h2>Building Block: Merkle Trees (s4.7)</h2></a>
+
+???
 
 <a name="divergence"><h2>Detecting Divergence</h2></a>
 <p>
