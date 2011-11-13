@@ -15,7 +15,7 @@ class Message(object):
 class ResponseMessage(Message):
     """Base type for messages that are replies to existing messages"""
     def __init__(self, req):
-        Message.__init__(self, req.to_node, req.from_node, msg_id=req.msg_id)
+        super(ResponseMessage, self).__init__(req.to_node, req.from_node, msg_id=req.msg_id)
         self.response_to = req
 
 
@@ -23,7 +23,7 @@ class ResponseMessage(Message):
 class NodeAction(Message):
     """Internal message indicating an action at a node"""
     def __init__(self, node):
-        Message.__init__(self, node, node)
+        super(NodeAction, self).__init__(node, node)
 
     def __str__(self):
         return str(self.from_node)
@@ -32,7 +32,7 @@ class NodeAction(Message):
 class TimerMessage(Message):
     """Internal message indicating a timer event at a node"""
     def __init__(self, node, reason, callback=None):
-        Message.__init__(self, node, node)
+        super(TimerMessage, self).__init__(node, node)
         self.reason = reason
         self.callback = callback
 

@@ -20,7 +20,7 @@ class MerkleTreeNode(object):
 class MerkleLeaf(MerkleTreeNode):
     """Leaf node in Merkle tree, encompassing all keys in range [min_key, max_key)"""
     def __init__(self, min_key, max_key, initdata=None):
-        MerkleTreeNode.__init__(self)
+        super(MerkleLeaf, self).__init__()
         self.min_key = min_key
         self.max_key = max_key
         self.data = dict()
@@ -63,7 +63,7 @@ class MerkleLeaf(MerkleTreeNode):
 class MerkleBranchNode(MerkleTreeNode):
     """Interior node in Merkle tree"""
     def __init__(self, left, right):
-        MerkleTreeNode.__init__(self)
+        super(MerkleBranchNode, self).__init__()
         self.left = left
         left.parent = self
         self.right = right

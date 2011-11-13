@@ -27,7 +27,7 @@ class DynamoNode(Node):
     chash = ConsistentHashTable(nodelist, T)
 
     def __init__(self):
-        Node.__init__(self)
+        super(DynamoNode, self).__init__()
         self.local_store = MerkleTree()  # key => (value, metadata)
         self.pending_put_req = {}  # seqno => set of requests sent to other nodes
         self.pending_put_rsp = {}  # seqno => set of nodes that have stored

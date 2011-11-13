@@ -5,7 +5,7 @@ from message import Message, ResponseMessage
 class DynamoRequestMessage(Message):
     """Base class for Dynamo request messages; all include the key for the data object in question"""
     def __init__(self, from_node, to_node, key, msg_id=None):
-        Message.__init__(self, from_node, to_node, msg_id=msg_id)
+        super(DynamoRequestMessage, self).__init__(from_node, to_node, msg_id=msg_id)
         self.key = key
 
     def __str__(self):
@@ -15,7 +15,7 @@ class DynamoRequestMessage(Message):
 class DynamoResponseMessage(ResponseMessage):
     """Base class for Dynamo response messages; all include key and value (plus metadata)"""
     def __init__(self, req, value, metadata):
-        ResponseMessage.__init__(self, req)
+        super(DynamoResponseMessage, self).__init__(req)
         self.key = req.key
         self.value = value
         self.metadata = metadata
@@ -26,7 +26,7 @@ class DynamoResponseMessage(ResponseMessage):
 
 class ClientPut(DynamoRequestMessage):
     def __init__(self, from_node, to_node, key, value, metadata, msg_id=None):
-        DynamoRequestMessage.__init__(self, from_node, to_node, key, msg_id=msg_id)
+        super(ClientPut, self).__init__(from_node, to_node, key, msg_id=msg_id)
         self.value = value
         self.metadata = metadata
 
@@ -36,7 +36,7 @@ class ClientPut(DynamoRequestMessage):
 
 class ClientPutRsp(DynamoResponseMessage):
     def __init__(self, req):
-        DynamoResponseMessage.__init__(self, req, req.value, req.metadata)
+        super(ClientPutRsp, self).__init__(req, req.value, req.metadata)
 
     def __str__(self):
         return "ClientPutRsp(%s=%s)" % (self.key, self.value)
@@ -44,7 +44,7 @@ class ClientPutRsp(DynamoResponseMessage):
 
 class PutReq(DynamoRequestMessage):
     def __init__(self, from_node, to_node, key, value, metadata, msg_id=None):
-        DynamoRequestMessage.__init__(self, from_node, to_node, key, msg_id)
+        super(PutReq, self).__init__(from_node, to_node, key, msg_id)
         self.value = value
         self.metadata = metadata
 
@@ -54,7 +54,7 @@ class PutReq(DynamoRequestMessage):
 
 class PutRsp(DynamoResponseMessage):
     def __init__(self, req):
-        DynamoResponseMessage.__init__(self, req, req.value, req.metadata)
+        super(PutRsp, self).__init__(req, req.value, req.metadata)
 
     def __str__(self):
         return "PutRsp(%s=%s)" % (self.key, self.value)
@@ -67,7 +67,7 @@ class ClientGet(DynamoRequestMessage):
 
 class ClientGetRsp(DynamoResponseMessage):
     def __init__(self, req, values, metadatas):
-        DynamoResponseMessage.__init__(self, req, values, metadatas)
+        super(ClientGetRsp, self).__init__(req, values, metadatas)
 
     def __str__(self):
         return "ClientGetRsp(%s=%s)" % (self.key, self.value)

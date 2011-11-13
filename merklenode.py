@@ -14,9 +14,8 @@ _logger = logging.getLogger('merkle')
 
 # PART merklenode
 class DynamoNode(Node):
-
     def __init__(self):
-        Node.__init__(self)
+        super(DynamoNode, self).__init__()
 
     def rcvmsg(self, msg):
         if isinstance(msg, ClientPut):

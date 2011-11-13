@@ -9,7 +9,7 @@ class VectorClockTimestamp(VectorClock):
     NODE_LIMIT = 10
 
     def __init__(self):
-        VectorClock.__init__(self)
+        super(VectorClockTimestamp, self).__init__()
         self.clock_time = {}  # node => timestamp
 
     def _maybe_truncate(self):
