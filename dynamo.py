@@ -1,4 +1,5 @@
 """Implementation of Dynamo"""
+import copy
 import random
 import logging
 
@@ -29,12 +30,12 @@ class DynamoNode(Node):
     def __init__(self):
         super(DynamoNode, self).__init__()
         self.local_store = MerkleTree()  # key => (value, metadata)
-        self.pending_put_req = {}  # seqno => set of requests sent to other nodes
         self.pending_put_rsp = {}  # seqno => set of nodes that have stored
         self.pending_put_msg = {}  # seqno => original client message
-        self.pending_get_req = {}  # seqno => set of requests sent to other nodes
         self.pending_get_rsp = {}  # seqno => set of (node, value, metadata) tuples
         self.pending_get_msg = {}  # seqno => original client message
+        # seqno => set of requests sent to other nodes, for each message class
+        self.pending_req = {PutReq: {}, GetReq: {}}
         self.failed_nodes = []
         # Rebuild the consistent hash table
         DynamoNode.nodelist.append(self)
@@ -79,20 +80,17 @@ class DynamoNode(Node):
             return
         # Send the request to an additional node by regenerating the preference list
         preference_list = DynamoNode.chash.find_nodes(reqmsg.key, DynamoNode.N, self.failed_nodes)
-        for node in preference_list:
-            if isinstance(reqmsg, PutReq) and reqmsg.msg_id in self.pending_put_req:
-                sent_nodes = [req.to_node for req in self.pending_put_req[reqmsg.msg_id]]
-                sent_nodes.append(self)
-                if node not in sent_nodes:
-                    putmsg = PutReq(self, node, reqmsg.key, reqmsg.value, reqmsg.metadata, msg_id=reqmsg.msg_id)
-                    self.pending_put_req[reqmsg.msg_id].add(putmsg)
-                    Framework.send_message(putmsg)
-            elif isinstance(reqmsg, GetReq) and reqmsg.msg_id in self.pending_get_req:
-                sent_nodes = [req.to_node for req in self.pending_get_req[reqmsg.msg_id]]
-                if node not in sent_nodes:
-                    getmsg = GetReq(self, node, reqmsg.key, msg_id=reqmsg.msg_id)
-                    self.pending_get_req[reqmsg.msg_id].add(getmsg)
-                    Framework.send_message(getmsg)
+        kls = reqmsg.__class__
+        # Check the pending-request list for this type of request message
+        if kls in self.pending_req and reqmsg.msg_id in self.pending_req[kls]:
+            for node in preference_list:
+                if node not in [req.to_node for req in self.pending_req[kls][reqmsg.msg_id]]:
+                    # Found a node on the new preference list that hasn't been sent the request.
+                    # Send it a copy
+                    newreqmsg = copy.copy(reqmsg)
+                    newreqmsg.to_node = node
+                    self.pending_req[kls][reqmsg.msg_id].add(newreqmsg)
+                    Framework.send_message(newreqmsg)
 
 # PART rcv_clientput
     def rcv_clientput(self, msg):
@@ -109,15 +107,15 @@ class DynamoNode(Node):
             seqno = self.generate_sequence_number()
             _logger.info("%s, %d: put %s=%s", self, seqno, msg.key, msg.value)
             metadata = (self.name, seqno)  # For now, metadata is just sequence number at coordinator
-            self.pending_put_req[seqno] = set()
             # Send out to preference list, and keep track of who has replied
+            self.pending_req[PutReq][seqno] = set()
             self.pending_put_rsp[seqno] = set()
             self.pending_put_msg[seqno] = msg
             reqcount = 0
             for node in preference_list:
-                    self.pending_put_req[seqno].add(putmsg)
                 # Send message to get node in preference list to store
                 putmsg = PutReq(self, node, msg.key, msg.value, metadata, msg_id=seqno)
+                self.pending_req[PutReq][seqno].add(putmsg)
                 Framework.send_message(putmsg)
                 reqcount = reqcount + 1
                 if reqcount >= DynamoNode.N:
@@ -128,13 +126,13 @@ class DynamoNode(Node):
     def rcv_clientget(self, msg):
         preference_list = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N, self.failed_nodes)
         seqno = self.generate_sequence_number()
-        self.pending_get_req[seqno] = set()
+        self.pending_req[GetReq][seqno] = set()
         self.pending_get_rsp[seqno] = set()
         self.pending_get_msg[seqno] = msg
         reqcount = 0
         for node in preference_list:
             getmsg = GetReq(self, node, msg.key, msg_id=seqno)
-            self.pending_get_req[seqno].add(getmsg)
+            self.pending_req[GetReq][seqno].add(getmsg)
             Framework.send_message(getmsg)
             reqcount = reqcount + 1
             if reqcount >= DynamoNode.N:
@@ -158,7 +156,7 @@ class DynamoNode(Node):
                 _logger.debug("  copies at %s", [node.name for node in self.pending_put_rsp[seqno]])
                 # Tidy up tracking data structures
                 original_msg = self.pending_put_msg[seqno]
-                del self.pending_put_req[seqno]
+                del self.pending_req[PutReq][seqno]
                 del self.pending_put_rsp[seqno]
                 del self.pending_put_msg[seqno]
                 # Reply to the original client
@@ -187,7 +185,7 @@ class DynamoNode(Node):
                 results = set([(value, metadata) for (node, value, metadata) in self.pending_get_rsp[seqno]])
                 # Tidy up tracking data structures
                 original_msg = self.pending_get_msg[seqno]
-                del self.pending_get_req[seqno]
+                del self.pending_req[GetReq][seqno]
                 del self.pending_get_rsp[seqno]
                 del self.pending_get_msg[seqno]
                 # Reply to the original client, including all received values
