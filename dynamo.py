@@ -104,24 +104,22 @@ class DynamoNode(Node):
             coordinator = preference_list[0]
             Framework.forward_message(msg, coordinator)
         else:
-            # Store locally, using an incrementing local sequence number to
-            # distinguish multiple requests for the same key
+            # Use an incrementing local sequence number to distinguish
+            # multiple requests for the same key
             seqno = self.generate_sequence_number()
-            _logger.info("%s, %d: store %s=%s", self, seqno, msg.key, msg.value)
+            _logger.info("%s, %d: put %s=%s", self, seqno, msg.key, msg.value)
             metadata = (self.name, seqno)  # For now, metadata is just sequence number at coordinator
-            self.store(msg.key, msg.value, metadata)
-            # Send out to other nodes, and keep track of who has replied
             self.pending_put_req[seqno] = set()
-            self.pending_put_rsp[seqno] = set([self])
+            # Send out to preference list, and keep track of who has replied
+            self.pending_put_rsp[seqno] = set()
             self.pending_put_msg[seqno] = msg
-            reqcount = 1
+            reqcount = 0
             for node in preference_list:
-                if node != self:
-                    # Send message to get other node in preference list to store
-                    putmsg = PutReq(self, node, msg.key, msg.value, metadata, msg_id=seqno)
                     self.pending_put_req[seqno].add(putmsg)
-                    Framework.send_message(putmsg)
-                    reqcount = reqcount + 1
+                # Send message to get node in preference list to store
+                putmsg = PutReq(self, node, msg.key, msg.value, metadata, msg_id=seqno)
+                Framework.send_message(putmsg)
+                reqcount = reqcount + 1
                 if reqcount >= DynamoNode.N:
                     # preference_list may have more than N entries to allow for failed nodes
                     break

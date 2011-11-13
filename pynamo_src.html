@@ -257,8 +257,8 @@ arrive at a random Dynamo node, and its first action is to figure out the <i>pre
 <ul>
   <li>If the local node isn't in the preference list, it forwards the request on to a node that is in the list (specifically, the 
     <i>coordinator</i> &ndash; the first node on the list).</li>
-  <li>If the local node is in the preference list, then it stores the key/value/context locally, and sends a 
-    <b>Put</b> message to N-1 other nodes to get them to store it too.</li>
+  <li>If the local node is in the preference list, then it sends a
+    <b>Put</b> message to the N nodes (including itself) to get them to store the data.</li>
 </ul>
 </p>
 #include <dynamo1.py:rcv_clientput>
