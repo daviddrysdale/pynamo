@@ -53,20 +53,22 @@ class DynamoNode(Node):
             return (None, None)
 
 # PART retry_failed_node
-    def retry_failed_node(self, _):
+    def retry_failed_node(self, _):  # Permanently repeating timer
         if self.failed_nodes:
             node = self.failed_nodes.pop(0)
-            # Send a test message
+            # Send a test message to the oldest failed node
             pingmsg = PingReq(self, node)
             Framework.send_message(pingmsg)
         # Restart the timer
         TimerManager.start_timer(self, reason="retry", priority=15, callback=self.retry_failed_node)
 
     def rcv_pingreq(self, pingmsg):
+        # Always reply to a test message
         pingrsp = PingRsp(pingmsg)
         Framework.send_message(pingrsp)
 
     def rcv_pingrsp(self, pingmsg):
+        # Remove all instances of recovered node from failed node list
         while pingmsg.from_node in self.failed_nodes:
             self.failed_nodes.remove(pingmsg.from_node)
 
@@ -184,9 +186,7 @@ class DynamoNode(Node):
                 _logger.info("%s: read %d copies of %s=? so done", self, DynamoNode.R, getrsp.key)
                 _logger.debug("  copies at %s", [(node.name, value) for (node, value, _) in self.pending_get_rsp[seqno]])
                 # Build up all the distinct values/metadata values for the response to the original request
-                results = set()
-                for (node, value, metadata) in self.pending_get_rsp[seqno]:
-                    results.add((value, metadata))
+                results = set([(value, metadata) for (node, value, metadata) in self.pending_get_rsp[seqno]])
                 # Tidy up tracking data structures
                 original_msg = self.pending_get_msg[seqno]
                 del self.pending_get_req[seqno]
@@ -197,6 +197,8 @@ class DynamoNode(Node):
                                              [value for (value, metadata) in results],
                                              [metadata for (value, metadata) in results])
                 Framework.send_message(client_getrsp)
+        else:
+            pass  # Superfluous reply
 
 # PART rcvmsg
     def rcvmsg(self, msg):

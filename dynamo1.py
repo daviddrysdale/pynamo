@@ -130,9 +130,7 @@ class DynamoNode(Node):
                 _logger.info("%s: read %d copies of %s=? so done", self, DynamoNode.R, getrsp.key)
                 _logger.debug("  copies at %s", [(node.name, value) for (node, value, _) in self.pending_get_rsp[seqno]])
                 # Build up all the distinct values/metadata values for the response to the original request
-                results = set()
-                for (node, value, metadata) in self.pending_get_rsp[seqno]:
-                    results.add((value, metadata))
+                results = set([(value, metadata) for (node, value, metadata) in self.pending_get_rsp[seqno]])
                 # Tidy up tracking data structures
                 original_msg = self.pending_get_msg[seqno]
                 del self.pending_get_rsp[seqno]
@@ -142,6 +140,8 @@ class DynamoNode(Node):
                                              [value for (value, metadata) in results],
                                              [metadata for (value, metadata) in results])
                 Framework.send_message(client_getrsp)
+        else:
+            pass  # Superfluous reply
 
 # PART rcvmsg
     def rcvmsg(self, msg):

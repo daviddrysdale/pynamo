@@ -40,7 +40,8 @@ class Framework(object):
         _logger.info("Enqueue %s->%s: %s", msg.from_node, msg.to_node, msg)
         cls.queue.append(msg)
         History.add("send", msg)
-        # Automatically run timers for request messages
+        # Automatically run timers for request messages if the sender can cope
+        # with retry timer pops
         if (expect_reply and
             not isinstance(msg, ResponseMessage) and
             'rsp_timer_pop' in msg.from_node.__class__.__dict__ and

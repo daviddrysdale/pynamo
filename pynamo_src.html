@@ -295,7 +295,9 @@ difference here is that whichever node first receives the client request coordin
 whether or not it itself is on the preference list for the key.
 </p>
 <p>
-So a client get request arrives at a node, which fans it out to <b>N</b> nodes on the preference list.
+So a client get request arrives at a node, which fans it out to <b>N</b> nodes on the preference list &ndash;
+which may or may not involve the node sending a message to itself, depending on whether it is on the
+preference list.
 </p>
 #include <dynamo1.py:rcv_clientget>
 <p>
@@ -346,9 +348,10 @@ Almost everything we still need to add to the code is about engineering around t
 
 <a name="faildetect"><h2>Failure Detection (Section 4.8.3)</h2></a>
 <p>
-The first step in coping with failure is detecting it.  The framework we're using can automatically start a timer
-for any request message that is sent, and after a suitable period without a response, it can notify the
-original sender of the failure.  To use this facility, the sender just needs to include a 
+The first step in coping with failure is detecting it.  The message-sending framework we're using can
+automatically start a timer for any request message that is sent, and after a suitable period without a
+response, it can notify the original sender of the failure.  To use this facility, the sender just needs to
+include a
 <code>rsp_timer_pop</code> method in its class.
 </p>
 <p>
@@ -374,8 +377,15 @@ Failed nodes are avoided in the preference list, both for <b>Put</b> operations:
 #diff <dynamo1.py:rcv_clientput> <dynamo2.py:rcv_clientput>
 <p>and for <b>Get</b> operations:</p>
 #diff <dynamo1.py:rcv_clientget> <dynamo2.py:rcv_clientget>
-<p>A node gets treated as failed when some request to it times out. To keep the replication factors up to
-  scratch, the timeout code also expands the set of nodes that the original request was sent to.</p>
+<p>
+  The code also needs to update the set of outstanding request when responses are received.
+</p>
+#diff <dynamo1.py:rcv_putrsp> <dynamo2.py:rcv_putrsp>
+#diff <dynamo1.py:rcv_getrsp> <dynamo2.py:rcv_getrsp>
+<p>
+  A node gets treated as failed when some request to it times out. To keep the replication factors up to
+  scratch, the timeout code also expands the set of nodes that the original request was sent to.
+</p>
 #include <dynamo2.py:rsp_timer_pop>
 <p>
 With these modifications, the failures shown earlier start to look more recoverable from:

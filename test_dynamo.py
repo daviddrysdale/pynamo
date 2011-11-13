@@ -107,12 +107,12 @@ class SimpleTestCase(unittest.TestCase):
 
     def test_put1_fail_nodes23(self):
         self.put_fail_nodes23(dynamo1)
-        print History.ladder(spacing=14)
+        print History.ladder(spacing=16)
 
     def test_put2_fail_nodes23(self):
         (_, pref_list) = self.put_fail_nodes23(dynamo2)
         # Force nodes that are of interest in put2_fail_nodes23_[234] to be included in the history
-        print History.ladder(force_include=pref_list, spacing=14)
+        print History.ladder(force_include=pref_list, spacing=16)
 
     def put_fail_nodes23(self, cls):
         for _ in range(6):
@@ -134,7 +134,7 @@ class SimpleTestCase(unittest.TestCase):
         from_line = len(History.history)
         a.put('K1', None, 2, destnode=destnode)
         Framework.schedule()
-        print History.ladder(force_include=pref_list, start_line=from_line, spacing=14)
+        print History.ladder(force_include=pref_list, start_line=from_line, spacing=16)
 
     def test_put2_fail_nodes23_3(self):
         """Show PingReq failing"""
