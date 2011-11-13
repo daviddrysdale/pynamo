@@ -100,9 +100,10 @@ class HashMultipleTestCase(unittest.TestCase):
         for node, count in nodecount.items():
             stats.add(count)
         print ("%d random hash keys assigned to %d nodes "
+               "each repeated %d times "
                "are distributed across the nodes "
                "with a standard deviation of %0.2f (compared to a mean of %d)." %
-               (numkeys, len(self.nodeset), stats.stddev(), numkeys / len(self.nodeset)))
+               (numkeys, len(self.nodeset), NODE_REPEAT, stats.stddev(), numkeys / len(self.nodeset)))
 
     def testFailover(self):
         """For a given unavailable node, see what other nodes get new traffic"""
