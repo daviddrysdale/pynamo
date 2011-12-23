@@ -336,6 +336,11 @@
     <div class="highlight"><pre>
 #result python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_4
     </pre></div>
+    <p>
+      However, examine the last line of the previous diagram: the different nodes that have been involved in
+      storing values for the key along the way now have a different idea of what the most up-to-date value for
+      that key is.  This means we'll need some way for the nodes to get back in sync.
+    </p>
 
     <a name="merkle"><h2>Building Block: Merkle Trees (s4.7)</h2></a>
     <p>
@@ -397,13 +402,7 @@ print mtree.root.value.hexdigest()
 #endpython
 
 
-
     <a name="catchup"><h2>Catchup</h2></a>
-    <p>
-      Examine the last line of the previous diagram: the different nodes that have been involved in storing
-      values for the key along the way now have a different idea of what the most up-to-date value for that
-      key is.
-    </p>
     ???
 
     <a name="vector_clock"><h2>Building Block: Vector Clocks (s4.4)</h2></a>
