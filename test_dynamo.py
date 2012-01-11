@@ -130,17 +130,17 @@ class SimpleTestCase(unittest.TestCase):
     def test_put2_fail_nodes23_2(self):
         """Show second request for same key skipping failed nodes"""
         (a, pref_list) = self.put_fail_nodes23(dynamo2)
-        destnode = pref_list[0]
+        coordinator = pref_list[0]
         from_line = len(History.history)
-        a.put('K1', None, 2, destnode=destnode)
+        a.put('K1', None, 2, destnode=coordinator)  # Send client request to coordinator for clarity
         Framework.schedule()
         print History.ladder(force_include=pref_list, start_line=from_line, spacing=16)
 
     def test_put2_fail_nodes23_3(self):
         """Show PingReq failing"""
         (a, pref_list) = self.put_fail_nodes23(dynamo99)
-        destnode = pref_list[0]
-        a.put('K1', None, 2, destnode=destnode)
+        coordinator = pref_list[0]
+        a.put('K1', None, 2, destnode=coordinator)  # Send client request to coordinator for clarity
         Framework.schedule(timers_to_process=0)
         from_line = len(History.history)
         Framework.schedule(timers_to_process=3)
@@ -149,15 +149,15 @@ class SimpleTestCase(unittest.TestCase):
     def test_put2_fail_nodes23_4(self):
         """Show PingReq recovering, and a subsequent Put returning to the original preference list"""
         (a, pref_list) = self.put_fail_nodes23(dynamo99)
-        destnode = pref_list[0]
+        coordinator = pref_list[0]
         from_line = len(History.history)
-        a.put('K1', None, 2, destnode=destnode)
+        a.put('K1', None, 2, destnode=coordinator)  # Send client request to coordinator for clarity
         Framework.schedule(timers_to_process=10)
         from_line = len(History.history)
         pref_list[1].recover()
         pref_list[2].recover()
         Framework.schedule(timers_to_process=15)
-        a.put('K1', None, 3, destnode=pref_list[0])
+        a.put('K1', None, 3, destnode=coordinator)
         Framework.schedule(timers_to_process=5)
         print History.ladder(force_include=pref_list, start_line=from_line, spacing=14)
         # print History.ladder() # @@@@ staggered start to ... lines
