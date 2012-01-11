@@ -38,6 +38,7 @@ class DynamoNode(Node):
         # seqno => set of requests sent to other nodes, for each message class
         self.pending_req = {PutReq: {}, GetReq: {}}
         self.failed_nodes = []
+        self.pending_handoffs = {}
         # Rebuild the consistent hash table
         DynamoNode.nodelist.append(self)
         DynamoNode.chash = ConsistentHashTable(DynamoNode.nodelist, DynamoNode.T)
@@ -157,6 +158,12 @@ class DynamoNode(Node):
     def rcv_put(self, putmsg):
         _logger.info("%s: store %s=%s", self, putmsg.key, putmsg.value)
         self.store(putmsg.key, putmsg.value, putmsg.metadata)
+        if putmsg.handoff is not None:
+            for failed_node in putmsg.handoff:
+                self.failed_nodes.append(failed_node)
+                if failed_node not in self.pending_handoffs:
+                    self.pending_handoffs[failed_node] = set()
+                self.pending_handoffs[failed_node].add(putmsg.key)
         putrsp = PutRsp(putmsg)
         Framework.send_message(putrsp)
 

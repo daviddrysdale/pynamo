@@ -144,13 +144,12 @@ class SimpleTestCase(unittest.TestCase):
         Framework.schedule(timers_to_process=0)
         from_line = len(History.history)
         Framework.schedule(timers_to_process=3)
-        print History.ladder(force_include=pref_list, start_line=from_line, spacing=14)
+        print History.ladder(force_include=pref_list, start_line=from_line, spacing=16)
 
     def test_put2_fail_nodes23_4(self):
         """Show PingReq recovering, and a subsequent Put returning to the original preference list"""
         (a, pref_list) = self.put_fail_nodes23(dynamo99)
         coordinator = pref_list[0]
-        from_line = len(History.history)
         a.put('K1', None, 2, destnode=coordinator)  # Send client request to coordinator for clarity
         Framework.schedule(timers_to_process=10)
         from_line = len(History.history)
@@ -159,8 +158,17 @@ class SimpleTestCase(unittest.TestCase):
         Framework.schedule(timers_to_process=15)
         a.put('K1', None, 3, destnode=coordinator)
         Framework.schedule(timers_to_process=5)
-        print History.ladder(force_include=pref_list, start_line=from_line, spacing=14)
+        print History.ladder(force_include=pref_list, start_line=from_line, spacing=16)
         # print History.ladder() # @@@@ staggered start to ... lines
+
+    def test_put2_fail_nodes23_5(self):
+        """Show Put after a failure including handoff, and the resulting Pings"""
+        (a, pref_list) = self.put_fail_nodes23(dynamo99)
+        coordinator = pref_list[0]
+        from_line = len(History.history)
+        a.put('K1', None, 2, destnode=coordinator)  # Send client request to coordinator for clarity
+        Framework.schedule(timers_to_process=10)
+        print History.ladder(force_include=pref_list, start_line=from_line, spacing=16)
 
 if __name__ == "__main__":
     for ii in range(1, len(sys.argv) - 1):  # pragma: no cover

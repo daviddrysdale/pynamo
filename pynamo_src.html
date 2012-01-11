@@ -356,6 +356,20 @@
     </p>
 #diff dynamo2.py:rcv_clientput dynamo.py:rcv_clientput
 
+    <p>
+      The next change is at the receiving node, which explictly starts to monitor the failed nodes for
+      recovery, and tracks which keys need to be propagated on recovery.
+    </p>
+    
+#diff dynamo2.py:rcv_put dynamo.py:rcv_put
+    <p>
+      This results in the generation of some additional <b>Ping</b> messages.
+    </p>
+
+    <div class="highlight"><pre>
+#result python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_5
+    </pre></div>
+
 
     <a name="merkle"><h2>Building Block: Merkle Trees (s4.7)</h2></a>
     <p>
