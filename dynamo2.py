@@ -5,11 +5,13 @@ import logging
 
 import logconfig
 from node import Node
+from timer import TimerManager
 from framework import Framework
 from hash_multiple import ConsistentHashTable
 from dynamomessages import ClientPut, ClientGet, ClientPutRsp, ClientGetRsp
 from dynamomessages import PutReq, GetReq, PutRsp, GetRsp
 from dynamomessages import DynamoRequestMessage
+from dynamomessages import PingReq, PingRsp
 
 logconfig.init_logging()
 _logger = logging.getLogger('dynamo')
@@ -48,6 +50,27 @@ class DynamoNode(Node):
             return self.local_store[key]
         else:
             return (None, None)
+
+# PART retry_failed_node
+    def retry_failed_node(self, _):  # Permanently repeating timer
+        if self.failed_nodes:
+            node = self.failed_nodes.pop(0)
+            # Send a test message to the oldest failed node
+            pingmsg = PingReq(self, node)
+            Framework.send_message(pingmsg)
+        # Restart the timer
+        TimerManager.start_timer(self, reason="retry", priority=15, callback=self.retry_failed_node)
+
+    def rcv_pingreq(self, pingmsg):
+        # Always reply to a test message
+        pingrsp = PingRsp(pingmsg)
+        Framework.send_message(pingrsp)
+
+    def rcv_pingrsp(self, pingmsg):
+        # Remove all instances of recovered node from failed node list
+        recovered_node = pingmsg.from_node
+        while recovered_node in self.failed_nodes:
+            self.failed_nodes.remove(recovered_node)
 
 # PART rsp_timer_pop
     def rsp_timer_pop(self, reqmsg):

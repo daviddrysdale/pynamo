@@ -170,6 +170,18 @@ class SimpleTestCase(unittest.TestCase):
         Framework.schedule(timers_to_process=10)
         print History.ladder(force_include=pref_list, start_line=from_line, spacing=16)
 
+    def test_put2_fail_nodes23_6(self):
+        """Show hinted handoff after recovery"""
+        (a, pref_list) = self.put_fail_nodes23(dynamo99)
+        coordinator = pref_list[0]
+        a.put('K1', None, 2, destnode=coordinator)  # Send client request to coordinator for clarity
+        Framework.schedule(timers_to_process=10)
+        from_line = len(History.history)
+        pref_list[1].recover()
+        pref_list[2].recover()
+        Framework.schedule(timers_to_process=15)
+        print History.ladder(force_include=pref_list, start_line=from_line, spacing=16)
+
 if __name__ == "__main__":
     for ii in range(1, len(sys.argv) - 1):  # pragma: no cover
         arg = sys.argv[ii]

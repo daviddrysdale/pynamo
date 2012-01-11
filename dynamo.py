@@ -72,8 +72,16 @@ class DynamoNode(Node):
 
     def rcv_pingrsp(self, pingmsg):
         # Remove all instances of recovered node from failed node list
-        while pingmsg.from_node in self.failed_nodes:
-            self.failed_nodes.remove(pingmsg.from_node)
+        recovered_node = pingmsg.from_node
+        while recovered_node in self.failed_nodes:
+            self.failed_nodes.remove(recovered_node)
+        if recovered_node in self.pending_handoffs:
+            for key in self.pending_handoffs[recovered_node]:
+                # Send our latest value for this key
+                (value, metadata) = self.retrieve(key)
+                putmsg = PutReq(self, recovered_node, key, value, metadata)
+                Framework.send_message(putmsg)
+            del self.pending_handoffs[recovered_node]
 
 # PART rsp_timer_pop
     def rsp_timer_pop(self, reqmsg):
