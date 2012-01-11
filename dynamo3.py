@@ -5,11 +5,14 @@ import logging
 
 import logconfig
 from node import Node
+from timer import TimerManager
 from framework import Framework
 from hash_multiple import ConsistentHashTable
 from dynamomessages import ClientPut, ClientGet, ClientPutRsp, ClientGetRsp
 from dynamomessages import PutReq, GetReq, PutRsp, GetRsp
 from dynamomessages import DynamoRequestMessage
+from dynamomessages import PingReq, PingRsp
+from merkle import MerkleTree
 
 logconfig.init_logging()
 _logger = logging.getLogger('dynamo')
@@ -27,7 +30,7 @@ class DynamoNode(Node):
 
     def __init__(self):
         super(DynamoNode, self).__init__()
-        self.local_store = {}  # key => (value, metadata)
+        self.local_store = MerkleTree()  # key => (value, metadata)
         self.pending_put_rsp = {}  # seqno => set of nodes that have stored
         self.pending_put_msg = {}  # seqno => original client message
         self.pending_get_rsp = {}  # seqno => set of (node, value, metadata) tuples
@@ -35,9 +38,12 @@ class DynamoNode(Node):
         # seqno => set of requests sent to other nodes, for each message class
         self.pending_req = {PutReq: {}, GetReq: {}}
         self.failed_nodes = []
+        self.pending_handoffs = {}
         # Rebuild the consistent hash table
         DynamoNode.nodelist.append(self)
         DynamoNode.chash = ConsistentHashTable(DynamoNode.nodelist, DynamoNode.T)
+        # Run a timer to retry failed nodes
+        self.retry_failed_node("retry")
 
 # PART storage
     def store(self, key, value, metadata):
@@ -48,6 +54,27 @@ class DynamoNode(Node):
             return self.local_store[key]
         else:
             return (None, None)
+
+# PART retry_failed_node
+    def retry_failed_node(self, _):  # Permanently repeating timer
+        if self.failed_nodes:
+            node = self.failed_nodes.pop(0)
+            # Send a test message to the oldest failed node
+            pingmsg = PingReq(self, node)
+            Framework.send_message(pingmsg)
+        # Restart the timer
+        TimerManager.start_timer(self, reason="retry", priority=15, callback=self.retry_failed_node)
+
+    def rcv_pingreq(self, pingmsg):
+        # Always reply to a test message
+        pingrsp = PingRsp(pingmsg)
+        Framework.send_message(pingrsp)
+
+    def rcv_pingrsp(self, pingmsg):
+        # Remove all instances of recovered node from failed node list
+        recovered_node = pingmsg.from_node
+        while recovered_node in self.failed_nodes:
+            self.failed_nodes.remove(recovered_node)
 
 # PART rsp_timer_pop
     def rsp_timer_pop(self, reqmsg):
@@ -88,7 +115,7 @@ class DynamoNode(Node):
             self.pending_put_rsp[seqno] = set()
             self.pending_put_msg[seqno] = msg
             reqcount = 0
-            for node in preference_list:
+            for ii, node in enumerate(preference_list):
                 # Send message to get node in preference list to store
                 putmsg = PutReq(self, node, msg.key, msg.value, metadata, msg_id=seqno)
                 self.pending_req[PutReq][seqno].add(putmsg)
@@ -193,6 +220,10 @@ class DynamoNode(Node):
             self.rcv_get(msg)
         elif isinstance(msg, GetRsp):
             self.rcv_getrsp(msg)
+        elif isinstance(msg, PingReq):
+            self.rcv_pingreq(msg)
+        elif isinstance(msg, PingRsp):
+            self.rcv_pingrsp(msg)
         else:
             raise TypeError("Unexpected message type %s", msg.__class__)
 

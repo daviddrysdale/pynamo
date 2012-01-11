@@ -331,17 +331,21 @@
 #result python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_3
     </pre></div>
     <p>
-      But once a node recovers, some <b>Ping</b> will eventually succeed and then a subsequent <b>Put</b>
-      request will return to using the original preference list.
-    </p>
-    <div class="highlight"><pre>
-#result python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_4
-    </pre></div>
-    <p>
-      However, examine the last line of the previous diagram: the different nodes that have been involved in
+      But once a node recovers, some <b>Ping</b> will eventually succeed. However, a <b>Get</b> request after
+      this recovery will not necessarily get the right answer: the different nodes that have been involved in
       storing values for the key along the way now have a different idea of what the most up-to-date value for
       that key is.  This means we'll need some way for the nodes to get back in sync.
     </p>
+
+    <div class="highlight"><pre>
+#result python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_4a
+    </pre></div>
+
+    <p>At this point, a subsequent <b>Put</b> request will return to using the original preference list.
+    </p>
+    <div class="highlight"><pre>
+#result python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_4b
+    </pre></div>
 
     <a name="hintedhandoff"><h2>Hinted Handoff</h2></a>
     <p>
@@ -354,12 +358,12 @@
       The first change to do this is at the sending node, filling in a <code>handoff</code> parameter on
       the <b>Put</b> message that is sent to the extra nodes.
     </p>
-#diff dynamo2.py:rcv_clientput dynamo.py:rcv_clientput
+#diff dynamo3.py:rcv_clientput dynamo.py:rcv_clientput
     <p>
       The next change is at the receiving node, which explictly starts to monitor the failed nodes for
       recovery, and tracks which keys need to be propagated on recovery.
     </p>
-#diff dynamo2.py:rcv_put dynamo.py:rcv_put
+#diff dynamo3.py:rcv_put dynamo.py:rcv_put
     <p>
       This results in the generation of some additional <b>Ping</b> messages.
     </p>
@@ -372,7 +376,7 @@
       Finally, when node recovery is detected, the appropriate <b>Put</b> messages to resynchronize the failed
       node's state are sent.
     </p>
-#diff dynamo2.py:retry_failed_node dynamo.py:retry_failed_node
+#diff dynamo3.py:retry_failed_node dynamo.py:retry_failed_node
 
     <p>
       This results in the recovered nodes discovering the state update that they'd missed out on.

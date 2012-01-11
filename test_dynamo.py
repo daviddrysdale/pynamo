@@ -9,6 +9,7 @@ from history import History
 
 import dynamo1
 import dynamo2
+import dynamo3
 import dynamo as dynamo99
 
 
@@ -146,9 +147,23 @@ class SimpleTestCase(unittest.TestCase):
         Framework.schedule(timers_to_process=3)
         print History.ladder(force_include=pref_list, start_line=from_line, spacing=16)
 
-    def test_put2_fail_nodes23_4(self):
+    def test_put2_fail_nodes23_4a(self):
+        """Show PingReq recovering but an inconsistent Get being returned"""
+        (a, pref_list) = self.put_fail_nodes23(dynamo3)
+        coordinator = pref_list[0]
+        a.put('K1', None, 2, destnode=coordinator)  # Send client request to coordinator for clarity
+        Framework.schedule(timers_to_process=10)
+        from_line = len(History.history)
+        pref_list[1].recover()
+        pref_list[2].recover()
+        Framework.schedule(timers_to_process=10)
+        a.get('K1', destnode=coordinator)
+        Framework.schedule(timers_to_process=0)
+        print History.ladder(force_include=pref_list, start_line=from_line, spacing=16)
+
+    def test_put2_fail_nodes23_4b(self):
         """Show PingReq recovering, and a subsequent Put returning to the original preference list"""
-        (a, pref_list) = self.put_fail_nodes23(dynamo99)
+        (a, pref_list) = self.put_fail_nodes23(dynamo3)
         coordinator = pref_list[0]
         a.put('K1', None, 2, destnode=coordinator)  # Send client request to coordinator for clarity
         Framework.schedule(timers_to_process=10)
@@ -159,7 +174,6 @@ class SimpleTestCase(unittest.TestCase):
         a.put('K1', None, 3, destnode=coordinator)
         Framework.schedule(timers_to_process=5)
         print History.ladder(force_include=pref_list, start_line=from_line, spacing=16)
-        # print History.ladder() # @@@@ staggered start to ... lines
 
     def test_put2_fail_nodes23_5(self):
         """Show Put after a failure including handoff, and the resulting Pings"""
