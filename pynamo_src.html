@@ -382,6 +382,13 @@
 #result python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_6
     </pre></div>
 
+    <p>
+      @@@ TOFIX: there are multiple timer pops and re-syncs above; this is presumably because there are parallel
+      timers running for the same destination node, and recovery doesn't cancel the second and subsequent
+      pending timers.
+      In other words, if we send msgA then msgB to destination node X, should we run two separate timers? Yes,
+      to detect individual message losses...but a PingRsp needs to do something a bit more granular.
+    </p>
 
     <a name="merkle"><h2>Building Block: Merkle Trees (s4.7)</h2></a>
     <p>
