@@ -179,9 +179,8 @@ class DynamoNode(Node):
     def rcv_get(self, getmsg):
         _logger.info("%s: retrieve %s=?", self, getmsg.key)
         (value, metadata) = self.retrieve(getmsg.key)
-        if value is not None:
-            getrsp = GetRsp(getmsg, value, metadata)
-            Framework.send_message(getrsp)
+        getrsp = GetRsp(getmsg, value, metadata)
+        Framework.send_message(getrsp)
 
 # PART rcv_getrsp
     def rcv_getrsp(self, getrsp):
