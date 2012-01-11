@@ -40,13 +40,17 @@ class ClientPutRsp(DynamoResponseMessage):
 
 
 class PutReq(DynamoRequestMessage):
-    def __init__(self, from_node, to_node, key, value, metadata, msg_id=None):
+    def __init__(self, from_node, to_node, key, value, metadata, msg_id=None, handoff=None):
         super(PutReq, self).__init__(from_node, to_node, key, msg_id)
         self.value = value
         self.metadata = metadata
+        self.handoff = handoff
 
     def __str__(self):
-        return "PutReq(%s=%s)" % (self.key, self.value)
+        if self.handoff is None:
+            return "PutReq(%s=%s)" % (self.key, self.value)
+        else:
+            return "PutReq(%s=%s, handoff=(%s))" % (self.key, self.value, ",".join([str(x) for x in self.handoff]))
 
 
 class PutRsp(DynamoResponseMessage):

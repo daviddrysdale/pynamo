@@ -95,7 +95,8 @@ class DynamoNode(Node):
 
 # PART rcv_clientput
     def rcv_clientput(self, msg):
-        preference_list = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N, self.failed_nodes)[0]
+        preference_list, avoided = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N, self.failed_nodes)
+        non_extra_count = DynamoNode.N - len(avoided)
         # Determine if we are in the list
         if self not in preference_list:
             # Forward to the coordinator for this key
@@ -113,9 +114,14 @@ class DynamoNode(Node):
             self.pending_put_rsp[seqno] = set()
             self.pending_put_msg[seqno] = msg
             reqcount = 0
-            for node in preference_list:
+            for ii, node in enumerate(preference_list):
+                if ii >= non_extra_count:
+                    # This is an extra node that's only include because of a failed node
+                    handoff = avoided
+                else:
+                    handoff = None
                 # Send message to get node in preference list to store
-                putmsg = PutReq(self, node, msg.key, msg.value, metadata, msg_id=seqno)
+                putmsg = PutReq(self, node, msg.key, msg.value, metadata, msg_id=seqno, handoff=handoff)
                 self.pending_req[PutReq][seqno].add(putmsg)
                 Framework.send_message(putmsg)
                 reqcount = reqcount + 1

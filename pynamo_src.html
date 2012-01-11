@@ -57,6 +57,7 @@
       <li><a href="#failure">Coping With Failure</a></li>
       <li><a href="#faildetect">Node Failure Detection (s4.8.3)</a></li>
       <li><a href="#failrecover">Node Recovery Detection</a></li>
+      <li><a href="#hintedhandoff">Hinted Handoff</a></li>
       <li><a href="#merkle">Building Block: Merkle Trees (s4.7)</a></li>
       <li><a href="#catchup">Catchup</a></li>
       <li><a href="#vector_clock">Building Block: Vector Clocks (s4.4)</a></li>
@@ -109,7 +110,7 @@
       <li><b>Distribution of traffic from a failed node</b>:
 #result python hash_multiple.py -s 1 HashMultipleTestCase.testFailover
       </li>
-    </ul>
+   </ul>
     <p>
       For 50 nodes with <b>100</b> copies of each node in the hash ring.
     </p>
@@ -292,11 +293,11 @@
     <p>and for <b>Get</b> operations:</p>
 #diff dynamo1.py:rcv_clientget dynamo2.py:rcv_clientget
     <p>
-      The code also needs to update the set of outstanding request when responses are received, both for Put:
+      The code also needs to update the set of outstanding request when responses are received, both for <b>Put</b>:
     </p>
 #diff dynamo1.py:rcv_putrsp dynamo2.py:rcv_putrsp
     <p>
-      and Get:
+      and <b>Get</b>:
     </p>
 #diff dynamo1.py:rcv_getrsp dynamo2.py:rcv_getrsp
     <p>
@@ -341,6 +342,20 @@
       storing values for the key along the way now have a different idea of what the most up-to-date value for
       that key is.  This means we'll need some way for the nodes to get back in sync.
     </p>
+
+    <a name="hintedhandoff"><h2>Hinted Handoff</h2></a>
+    <p>
+      The most straightforward approach to restore synchronization is a <i>hinted handoff</i>:
+      the extra node that received the <b>Put</b> operation gets told about the failed node that should have
+      received the <b>Put</b> in the first place.  The extra node can then monitor the original node for
+      liveness, and when it recovers send it the data that it missed.
+    </p>
+    <p>
+      The first change to do this is at the sending node, filling in a <code>handoff</code> parameter on
+      the <b>Put</b> message that is sent to the extra nodes.
+    </p>
+#diff dynamo2.py:rcv_clientput dynamo.py:rcv_clientput
+
 
     <a name="merkle"><h2>Building Block: Merkle Trees (s4.7)</h2></a>
     <p>
