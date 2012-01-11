@@ -45,7 +45,7 @@ class DynamoNode(Node):
 
 # PART rcv_clientput
     def rcv_clientput(self, msg):
-        preference_list = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N)
+        preference_list = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N)[0]
         # Determine if we are in the list
         if self not in preference_list:
             # Forward to the coordinator for this key
@@ -73,7 +73,7 @@ class DynamoNode(Node):
 
 # PART rcv_clientget
     def rcv_clientget(self, msg):
-        preference_list = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N)
+        preference_list = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N)[0]
         # Determine if we are in the list
         if self not in preference_list:
             # Forward to the coordinator for this key

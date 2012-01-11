@@ -97,7 +97,7 @@ class SimpleTestCase(unittest.TestCase):
         a = cls.DynamoClientNode('a')
         a.put('K1', None, 1)
         # Fail the second node in the preference list
-        pref_list = cls.DynamoNode.chash.find_nodes('K1', 3)
+        pref_list = cls.DynamoNode.chash.find_nodes('K1', 3)[0]
         Framework.schedule(1)
         pref_list[1].fail()
         Framework.schedule()
@@ -119,7 +119,7 @@ class SimpleTestCase(unittest.TestCase):
             cls.DynamoNode()
         a = cls.DynamoClientNode('a')
         # Fail the second and third node in the preference list
-        pref_list = cls.DynamoNode.chash.find_nodes('K1', 5)
+        pref_list = cls.DynamoNode.chash.find_nodes('K1', 5)[0]
         a.put('K1', None, 1, destnode=pref_list[0])
         Framework.schedule(1)
         pref_list[1].fail()

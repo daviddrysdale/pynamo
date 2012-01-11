@@ -21,7 +21,8 @@ class ConsistentHashTable(object):
 
     def find_nodes(self, key, count=1, avoid=None):
         """Return a list of count nodes from the hash table that are
-        consecutively after the hash of the given key.
+        consecutively after the hash of the given key, together with
+        those nodes from the avoid collection that have been avoided.
 
         Returned list size is <= count, and any nodes in the avoid collection
         are not included."""
@@ -34,17 +35,20 @@ class ConsistentHashTable(object):
         initial_index = bisect.bisect(self.hashlist, hv)
         next_index = initial_index
         results = []
+        avoided = set()
         while len(results) < count:
             if next_index == len(self.nodelist):  # Wrap round to the start
                 next_index = 0
             node = self.nodelist[next_index][1]
-            if node not in avoid and node not in results:
+            if node in avoid:
+                avoided.add(node)
+            elif node not in results:
                 results.append(node)
             next_index = next_index + 1
             if next_index == initial_index:
                 # Gone all the way around -- terminate loop regardless
                 break
-        return results
+        return results, avoided
 
     def __str__(self):
         return ",".join(["(%s, %s)" %
@@ -80,13 +84,17 @@ class HashMultipleTestCase(unittest.TestCase):
                          "(2af91581036572478db2b2c90479c73f, B),"
                          "(57e1e221c0a1aa811bc8d4d8dd6deaa7, A),"
                          "(8b872364fb86c3da3f942c6346f01195, C)")
-        self.assertEqual(self.c1.find_nodes('splurg', 2), ['A', 'C'])
-        self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A',)), ['C', 'B'])
-        self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A', 'B')), ['C'])
-        self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A', 'B', 'C')), [])
+        self.assertEqual(self.c1.find_nodes('splurg', 2),
+                         (['A', 'C'], set()))
+        self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A',)),
+                         (['C', 'B'], set('A')))
+        self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A', 'B')),
+                         (['C'], set(('A', 'B'))))
+        self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A', 'B', 'C')),
+                         ([], set(('A', 'B', 'C'))))
 
     def testLarge(self):
-        x = self.c2.find_nodes('splurg', 15)
+        x = self.c2.find_nodes('splurg', 15)[0]
         self.assertEqual(len(x), 15)
 
     def testDistribution(self):
@@ -94,7 +102,7 @@ class HashMultipleTestCase(unittest.TestCase):
         nodecount = dict([(node, 0) for node in self.nodeset])
         numkeys = 10000
         for _ in range(numkeys):
-            node = self.c2.find_nodes(random_3letters(), 1)[0]
+            node = self.c2.find_nodes(random_3letters(), 1)[0][0]
             nodecount[node] = nodecount[node] + 1
         stats = Stats()
         for node, count in nodecount.items():
@@ -115,7 +123,7 @@ class HashMultipleTestCase(unittest.TestCase):
         numkeys = 10000
         for _ in range(numkeys):
             key = random_3letters()
-            node_pair = self.c2.find_nodes(key, 2)
+            node_pair = self.c2.find_nodes(key, 2)[0]
             transfer[node_pair[0]][node_pair[1]] = transfer[node_pair[0]][node_pair[1]] + 1
         stats = Stats()
         for from_node in self.nodeset:

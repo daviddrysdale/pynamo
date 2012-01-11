@@ -55,7 +55,7 @@ class DynamoNode(Node):
         if not isinstance(reqmsg, DynamoRequestMessage):
             return
         # Send the request to an additional node by regenerating the preference list
-        preference_list = DynamoNode.chash.find_nodes(reqmsg.key, DynamoNode.N, self.failed_nodes)
+        preference_list = DynamoNode.chash.find_nodes(reqmsg.key, DynamoNode.N, self.failed_nodes)[0]
         kls = reqmsg.__class__
         # Check the pending-request list for this type of request message
         if kls in self.pending_req and reqmsg.msg_id in self.pending_req[kls]:
@@ -70,7 +70,7 @@ class DynamoNode(Node):
 
 # PART rcv_clientput
     def rcv_clientput(self, msg):
-        preference_list = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N, self.failed_nodes)
+        preference_list = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N, self.failed_nodes)[0]
         # Determine if we are in the list
         if self not in preference_list:
             # Forward to the coordinator for this key
@@ -100,7 +100,7 @@ class DynamoNode(Node):
 
 # PART rcv_clientget
     def rcv_clientget(self, msg):
-        preference_list = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N, self.failed_nodes)
+        preference_list = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N, self.failed_nodes)[0]
         # Determine if we are in the list
         if self not in preference_list:
             # Forward to the coordinator for this key
