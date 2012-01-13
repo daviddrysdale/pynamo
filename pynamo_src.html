@@ -556,7 +556,7 @@ print (v3 < converged_clock)
     <p>
       Network partitions are particularly bad because different clients can update keys on the either side of
       the partition, resulting in different, incompatible, values for the keys.  Once the partition is
-      repaired, what's do be done about the inconsistent values?
+      repaired, what's to be done about the inconsistent values?
     </p>
     ???
     <a name="divergence_repair"><h2>Repairing Divergence</h2></a>
@@ -567,14 +567,17 @@ print (v3 < converged_clock)
     
     
     <a name="framework"><h2>Appendix: Node Simulation Framework</h2></a>
-    
+    <p>
+      The code here is built on a framework that simulates nodes and the messages between them.  The modules
+      for this are divided up as follows.
+    </p>
     <ul>
-      <li>framework.py: </li>
-      <li>history.py: </li>
-      <li>timer.py: </li>
-      <li>testutils.py: </li>
-      <li>logconfig.py: </li>
-      <li>message.py: </li>
+      <li><code>framework.py</code>: Master code for scheduling and tracking nodes and messages.</li>
+      <li><code>history.py</code>: Code to generate sequence diagrams from a list of events.</li>
+      <li><code>timer.py</code>: Code to manage pending timers.</li>
+      <li><code>testutils.py</code>: Statistics utilities for unit tests.</li>
+      <li><code>logconfig.py</code>: Initialization for logging.</li>
+      <li><code>message.py</code>: Base classes for message structures.</li>
     </ul>
     <a name=""><h2>Epilog</h2></a>
     <p>
