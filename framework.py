@@ -56,6 +56,18 @@ class Framework(object):
             del cls.pending_timers[reqmsg]
 
     @classmethod
+    def cancel_timers_to(cls, destnode):
+        """Cancel all pending-request timers destined for the given node.
+        Returns a list of the request messages whose timers have been cancelled."""
+        failed_requests = []
+        for reqmsg in cls.pending_timers.keys():
+            if reqmsg.to_node == destnode:
+                TimerManager.cancel_timer(cls.pending_timers[reqmsg])
+                del cls.pending_timers[reqmsg]
+                failed_requests.append(reqmsg)
+        return failed_requests
+
+    @classmethod
     def rsp_timer_pop(cls, reqmsg):
         # Remove the record of the pending timer
         del cls.pending_timers[reqmsg]
