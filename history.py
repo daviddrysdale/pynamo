@@ -193,7 +193,8 @@ class History(object):
                 continue  # don't emit a line
             elif action == "announce":
                 indent = "*" * ((linelen - len(msg) - 4) // 2)
-                lines.append(' %s %s %s ' % (indent, msg, indent))
+                if lineno > start_line:
+                    lines.append(' %s %s %s ' % (indent, msg, indent))
                 continue  # line already emitted
 
             # Put the array of characters together into a line, and add that to the list
