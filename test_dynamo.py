@@ -3,9 +3,11 @@
 import sys
 import random
 import unittest
+import logging
 
-from framework import Framework, reset
+from framework import Framework, reset_all
 from history import History
+import logconfig
 
 import dynamomessages
 import dynamo1
@@ -14,14 +16,19 @@ import dynamo3
 import dynamo4
 import dynamo as dynamo99
 
+logconfig.init_logging()
+_logger = logging.getLogger('dynamo')
+
 
 class SimpleTestCase(unittest.TestCase):
     """Test simple Dynamo function"""
     def setUp(self):
-        reset()
+        _logger.info("Reset for next test")
+        reset_all()
 
     def tearDown(self):
-        reset()
+        _logger.info("Reset after last test")
+        reset_all()
 
     def test_simple_put(self):
         for _ in range(6):
