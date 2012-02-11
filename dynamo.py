@@ -291,7 +291,7 @@ class DynamoClientNode(Node):
     def rsp_timer_pop(self, reqmsg):
         if isinstance(reqmsg, ClientPut):  # retry
             _logger.info("Put request timed out; retrying")
-            self.put(reqmsg.key, reqmsg.metadata, reqmsg.value)
+            self.put(reqmsg.key, [reqmsg.metadata], reqmsg.value)
         elif isinstance(reqmsg, ClientGet):  # retry
             _logger.info("Get request timed out; retrying")
             self.get(reqmsg.key)
