@@ -79,6 +79,8 @@ class VectorClock(object):
         entry is a direct ancestor of any other result entry."""
         results = []
         for obj, vc in vcs:
+            if vc is None:  # Treat None as empty VectorClock
+                vc = VectorClock()
             # See if this vector-clock subsumes or is subsumed by anything already present
             subsumed = False
             for ii, (resultobj, resultvc) in enumerate(results):
@@ -100,6 +102,8 @@ class VectorClock(object):
         """Return a single VectorClock that subsumes all of the input VectorClocks"""
         result = cls()
         for vc in vcs:
+            if vc is None:
+                continue
             for node, counter in vc.clock.items():
                 if node in result.clock:
                     if result.clock[node] < counter:
