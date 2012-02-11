@@ -222,13 +222,14 @@ class SimpleTestCase(unittest.TestCase):
 
     def test_get_put_get_put(self):
         """Show 2 x get-then-put operation"""
-        (a, pref_list) = self.get_put_get_put()
         dynamomessages._show_metadata = True
+        (a, pref_list) = self.get_put_get_put()
         print History.ladder(force_include=pref_list, spacing=16)
         dynamomessages._show_metadata = False
 
     def get_put_put(self, a, coordinator):
-        # Send in a get-then-put-put
+        # Assume .get_put_get_put() has happened already.
+        # Send in a get-then-put-put.  
         a.get('K1', destnode=coordinator)
         Framework.schedule(timers_to_process=0)
         getrsp = a.last_msg
@@ -240,16 +241,17 @@ class SimpleTestCase(unittest.TestCase):
 
     def test_get_put_put(self):
         """Show get-then-put-then-put operation"""
+        dynamomessages._show_metadata = True
         (a, pref_list) = self.get_put_get_put()
         coordinator = pref_list[0]
         from_line = len(History.history)
         self.get_put_put(a, coordinator)
-        dynamomessages._show_metadata = True
         print History.ladder(force_include=pref_list, start_line=from_line, spacing=16)
         dynamomessages._show_metadata = False
 
     def test_metadata_simple_fail(self):
         """Show a vector clock not mattering on simple failures"""
+        dynamomessages._show_metadata = True
         (a, pref_list) = self.get_put_get_put()
         coordinator = pref_list[0]
         self.get_put_put(a, coordinator)
@@ -263,12 +265,12 @@ class SimpleTestCase(unittest.TestCase):
         # Send in a get
         a.get('K1', destnode=pref_list[1])
         Framework.schedule(timers_to_process=0)
-        dynamomessages._show_metadata = True
         print History.ladder(force_include=pref_list, start_line=from_line, spacing=16)
         dynamomessages._show_metadata = False
 
     def test_partition(self):
         """Show a network partition"""
+        dynamomessages._show_metadata = True
         cls = dynamo99
         A = cls.DynamoNode()
         B = cls.DynamoNode()
@@ -307,12 +309,7 @@ class SimpleTestCase(unittest.TestCase):
         Framework.schedule(timers_to_process=3)
         b_metadata = [b.last_msg.metadata]  # PutRsp has a single VectorClock
 
-        dynamomessages._show_metadata = True
-        print History.ladder(force_include=all_nodes, spacing=16, key=lambda x: ' ' if x == b else x.name)
-        dynamomessages._show_metadata = False
-
         # Display, tweaking ordering of nodes so partition is in the middle
-        dynamomessages._show_metadata = True
         print History.ladder(force_include=all_nodes, spacing=16, key=lambda x: ' ' if x == b else x.name)
         dynamomessages._show_metadata = False
 
