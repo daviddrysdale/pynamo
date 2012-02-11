@@ -142,7 +142,7 @@ class SimpleTestCase(unittest.TestCase):
 
     def test_put2_fail_nodes23_3(self):
         """Show PingReq failing"""
-        (a, pref_list) = self.put_fail_nodes23(dynamo99)
+        (a, pref_list) = self.put_fail_nodes23(dynamo4)
         coordinator = pref_list[0]
         a.put('K1', None, 2, destnode=coordinator)  # Send client request to coordinator for clarity
         Framework.schedule(timers_to_process=0)
@@ -266,7 +266,56 @@ class SimpleTestCase(unittest.TestCase):
         dynamomessages._show_metadata = True
         print History.ladder(force_include=pref_list, start_line=from_line, spacing=16)
         dynamomessages._show_metadata = False
-        
+
+    def test_partition(self):
+        """Show a network partition"""
+        cls = dynamo99
+        A = cls.DynamoNode()
+        B = cls.DynamoNode()
+        C = cls.DynamoNode()
+        D = cls.DynamoNode()
+        E = cls.DynamoNode()
+        F = cls.DynamoNode()
+        a = cls.DynamoClientNode('a')
+        b = cls.DynamoClientNode('b')
+        all_nodes = set((A, B, C, D, E, F, a, b))
+        pref_list = cls.DynamoNode.chash.find_nodes('K1', 5)[0]
+        coordinator = pref_list[0]
+        # Set in a get-then-put
+        # Send in first get-then-put
+        a.get('K1', destnode=coordinator)
+        Framework.schedule(timers_to_process=0)
+        getrsp = a.last_msg
+        a.put('K1', getrsp.metadata, 1, destnode=coordinator)
+        Framework.schedule(timers_to_process=0)
+        a_metadata = [a.last_msg.metadata]  # PutRsp has a single VectorClock
+
+        # Now partition the network: (b A B C) (D E F a)
+        Framework.cut_wires((b, A, B, C), (D, E, F, a))
+        Framework.cut_wires((D, E, F, a), (b, A, B, C))
+
+        # Subsequent Put from a
+        a.put('K1', a_metadata, 11, destnode=coordinator)
+        Framework.schedule(timers_to_process=2)
+        a_metadata = [a.last_msg.metadata]  # PutRsp has a single VectorClock
+
+        # Get-then-Put from b
+        b.get('K1', destnode=coordinator)
+        Framework.schedule(timers_to_process=4)
+        getrsp = b.last_msg
+        b.put('K1', getrsp.metadata, 21, destnode=A)
+        Framework.schedule(timers_to_process=3)
+        b_metadata = [b.last_msg.metadata]  # PutRsp has a single VectorClock
+
+        dynamomessages._show_metadata = True
+        print History.ladder(force_include=all_nodes, spacing=16, key=lambda x: ' ' if x == b else x.name)
+        dynamomessages._show_metadata = False
+
+        # Display, tweaking ordering of nodes so partition is in the middle
+        dynamomessages._show_metadata = True
+        print History.ladder(force_include=all_nodes, spacing=16, key=lambda x: ' ' if x == b else x.name)
+        dynamomessages._show_metadata = False
+
 if __name__ == "__main__":
     for ii in range(1, len(sys.argv) - 1):  # pragma: no cover
         arg = sys.argv[ii]
