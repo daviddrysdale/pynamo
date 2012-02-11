@@ -15,6 +15,7 @@ from dynamomessages import PutReq, GetReq, PutRsp, GetRsp
 from dynamomessages import DynamoRequestMessage
 from dynamomessages import PingReq, PingRsp
 from merkle import MerkleTree
+from vectorclock import VectorClock
 
 logconfig.init_logging()
 _logger = logging.getLogger('dynamo')
@@ -125,7 +126,9 @@ class DynamoNode(Node):
             # multiple requests for the same key
             seqno = self.generate_sequence_number()
             _logger.info("%s, %d: put %s=%s", self, seqno, msg.key, msg.value)
-            metadata = (self.name, seqno)  # For now, metadata is just sequence number at coordinator
+            # The metadata for a key is passed in by the client, and updated by the coordinator node.
+            metadata = copy.deepcopy(msg.metadata)
+            metadata.update(self.name, seqno)
             # Send out to preference list, and keep track of who has replied
             self.pending_req[PutReq][seqno] = set()
             self.pending_put_rsp[seqno] = set()
@@ -197,7 +200,7 @@ class DynamoNode(Node):
                 del self.pending_put_rsp[seqno]
                 del self.pending_put_msg[seqno]
                 # Reply to the original client
-                client_putrsp = ClientPutRsp(original_msg)
+                client_putrsp = ClientPutRsp(original_msg, putrsp.metadata)
                 Framework.send_message(client_putrsp)
         else:
             pass  # Superfluous reply
@@ -217,8 +220,8 @@ class DynamoNode(Node):
             if len(self.pending_get_rsp[seqno]) >= DynamoNode.R:
                 _logger.info("%s: read %d copies of %s=? so done", self, DynamoNode.R, getrsp.key)
                 _logger.debug("  copies at %s", [(node.name, value) for (node, value, _) in self.pending_get_rsp[seqno]])
-                # Build up all the distinct values/metadata values for the response to the original request
-                results = set([(value, metadata) for (node, value, metadata) in self.pending_get_rsp[seqno]])
+                # Coalesce all compatible (value, metadata) pairs across the responses
+                results = VectorClock.coalesce2([(value, metadata) for (node, value, metadata) in self.pending_get_rsp[seqno]])
                 # Tidy up tracking data structures
                 original_msg = self.pending_get_msg[seqno]
                 del self.pending_req[GetReq][seqno]
@@ -266,6 +269,13 @@ class DynamoClientNode(Node):
     def put(self, key, metadata, value, destnode=None):
         if destnode is None:  # Pick a random node to send the request to
             destnode = random.choice(DynamoNode.nodelist)
+        # Input metadata is always a sequence, but we always need to insert a
+        # single VectorClock object into the ClientPut message
+        if len(metadata) == 1 and metadata[0] is None:
+            metadata = VectorClock()
+        else:
+            # A Put operation always implies convergence
+            metadata = VectorClock.converge(metadata)
         putmsg = ClientPut(self, destnode, key, value, metadata)
         Framework.send_message(putmsg)
 
@@ -285,4 +295,4 @@ class DynamoClientNode(Node):
 
 # PART clientrcvmsg
     def rcvmsg(self, msg):
-        pass  # Client does nothing with results
+        self.last_msg = msg

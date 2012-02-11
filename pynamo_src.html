@@ -548,15 +548,51 @@ print (v3 < converged_clock)
 #include vectorclockt.py
     <a name="divergence"><h2>Detecting Divergence</h2></a>
     <p>
+      The vector clocks of the previous section allow Dynamo to detect when there have been distinct,
+      inconsistent updates for a  particular key. The vector clock is held in the metadata associated with the
+      key, and it is the responsibility of the Dynamo <b>client</b> to indicate the version of the data that
+      it is updating.  In practical terms, this means that the client needs to preceded every <b>Put</b>
+      operation with a <b>Get</b> operation to retrieve the appropriate metadata.
+    </p>
+    <div class="highlight"><pre>
+#result python test_dynamo.py --seed 10 SimpleTestCase.test_get_put_get_put
+    </pre></div>
+    <p>
+      For convenience, to cope with the situation where a client holds on to a key and makes multiple updates,
+      we also return the new metadata on a <b>Put</b> response so it can be used for a subsequent <b>Put</b>:
+    </p>
+    <div class="highlight"><pre>
+#result python test_dynamo.py --seed 10 SimpleTestCase.test_get_put_put
+    </pre></div>
+    <p>
+      The Dynamo node that acts as the coordinator for the key updates the vector clock with its own sequence
+      numbers:
+    </p>
+    <p>
+#diff dynamo4.py:rcv_clientput dynamo.py:rcv_clientput
+    <p>
+      For a straightforward node failure, the vector clock doesn't really add anything.  Continuing from the
+      sequences above, a subsequent <b>Put</b> then a <b>Get</b> still return a single consistent value
+      &ndash; albeit with a vector clock that indicates multiple Dynamo nodes have been involved in the
+      history of this key.
+    </p>
+    <div class="highlight"><pre>
+#result python test_dynamo.py --seed 10 SimpleTestCase.test_metadata_simple_fail
+    </pre></div>
+    <p>
       Of course, it's not just nodes that can fail &ndash; sometimes, the links between them fail too.  The
       worst scenario that this leads to is <i>network partition</i>: half of the network is on one side of the
       partition, the other half is on the other side, and never the twain shall meet.
-    </p>
-    ???scenario with link failures leading to partition
-    <p>
       Network partitions are particularly bad because different clients can update keys on the either side of
-      the partition, resulting in different, incompatible, values for the keys.  Once the partition is
-      repaired, what's to be done about the inconsistent values?
+      the partition, resulting in different, incompatible, values for the keys.  
+    </p>
+
+
+
+
+
+    <p>
+      Once the partition is repaired, what's to be done about the inconsistent values?
     </p>
     ???
     <a name="divergence_repair"><h2>Repairing Divergence</h2></a>

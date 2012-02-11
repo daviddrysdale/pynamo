@@ -7,6 +7,7 @@ import unittest
 from framework import Framework, reset
 from history import History
 
+import dynamomessages
 import dynamo1
 import dynamo2
 import dynamo3
@@ -117,6 +118,7 @@ class SimpleTestCase(unittest.TestCase):
         print History.ladder(force_include=pref_list, spacing=16)
 
     def put_fail_nodes23(self, cls):
+        # Set up 6 nodes and 1 client node
         for _ in range(6):
             cls.DynamoNode()
         a = cls.DynamoClientNode('a')
@@ -197,6 +199,74 @@ class SimpleTestCase(unittest.TestCase):
         Framework.schedule(timers_to_process=15)
         print History.ladder(force_include=pref_list, start_line=from_line, spacing=16)
 
+    def get_put_get_put(self):
+        cls = dynamo99
+        for _ in range(6):
+            cls.DynamoNode()
+        a = cls.DynamoClientNode('a')
+        pref_list = cls.DynamoNode.chash.find_nodes('K1', 5)[0]
+        coordinator = pref_list[0]
+        # Send in first get-then-put
+        a.get('K1', destnode=coordinator)
+        Framework.schedule(timers_to_process=0)
+        getrsp = a.last_msg
+        a.put('K1', getrsp.metadata, 1, destnode=coordinator)
+        Framework.schedule(timers_to_process=0)
+        # Send in second get-then-put
+        a.get('K1', destnode=coordinator)
+        Framework.schedule(timers_to_process=0)
+        getrsp = a.last_msg
+        a.put('K1', getrsp.metadata, 2, destnode=coordinator)
+        Framework.schedule(timers_to_process=0)
+        return (a, pref_list)
+
+    def test_get_put_get_put(self):
+        """Show 2 x get-then-put operation"""
+        (a, pref_list) = self.get_put_get_put()
+        dynamomessages._show_metadata = True
+        print History.ladder(force_include=pref_list, spacing=16)
+        dynamomessages._show_metadata = False
+
+    def get_put_put(self, a, coordinator):
+        # Send in a get-then-put-put
+        a.get('K1', destnode=coordinator)
+        Framework.schedule(timers_to_process=0)
+        getrsp = a.last_msg
+        a.put('K1', getrsp.metadata, 3, destnode=coordinator)
+        Framework.schedule(timers_to_process=0)
+        metadata = [a.last_msg.metadata]  # PutRsp has a single VectorClock
+        a.put('K1', metadata, 4, destnode=coordinator)
+        Framework.schedule(timers_to_process=0)
+
+    def test_get_put_put(self):
+        """Show get-then-put-then-put operation"""
+        (a, pref_list) = self.get_put_get_put()
+        coordinator = pref_list[0]
+        from_line = len(History.history)
+        self.get_put_put(a, coordinator)
+        dynamomessages._show_metadata = True
+        print History.ladder(force_include=pref_list, start_line=from_line, spacing=16)
+        dynamomessages._show_metadata = False
+
+    def test_metadata_simple_fail(self):
+        """Show a vector clock not mattering on simple failures"""
+        (a, pref_list) = self.get_put_get_put()
+        coordinator = pref_list[0]
+        self.get_put_put(a, coordinator)
+        from_line = len(History.history)
+        metadata = [a.last_msg.metadata]  # PutRsp has a single VectorClock
+        # Fail the coordinator
+        coordinator.fail()
+        # Send in another put
+        a.put('K1', metadata, 11, destnode=pref_list[1])
+        Framework.schedule(timers_to_process=0)
+        # Send in a get
+        a.get('K1', destnode=pref_list[1])
+        Framework.schedule(timers_to_process=0)
+        dynamomessages._show_metadata = True
+        print History.ladder(force_include=pref_list, start_line=from_line, spacing=16)
+        dynamomessages._show_metadata = False
+        
 if __name__ == "__main__":
     for ii in range(1, len(sys.argv) - 1):  # pragma: no cover
         arg = sys.argv[ii]
