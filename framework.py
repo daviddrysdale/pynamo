@@ -25,6 +25,7 @@ class Framework(object):
 
     @classmethod
     def cut_wires(cls, from_nodes, to_nodes):
+        _logger.info("Cut %s -> %s", [str(x) for x in from_nodes], [str(x) for x in to_nodes])
         cls.cuts.append((from_nodes, to_nodes))
 
     @classmethod
@@ -72,6 +73,7 @@ class Framework(object):
         # Remove the record of the pending timer
         del cls.pending_timers[reqmsg]
         # Call through to the node's rsp_timer_pop() method
+        _logger.debug("Call on to rsp_timer_pop() for node %s" % reqmsg.from_node)
         reqmsg.from_node.rsp_timer_pop(reqmsg)
 
     @classmethod

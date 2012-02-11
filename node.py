@@ -54,21 +54,25 @@ class Node(object):
     def fail(self):
         """Mark this Node as currently failed; all messages to it will be dropped"""
         self.failed = True
+        _logger.debug("Node %s fails", self)
         History.add('fail', NodeAction(self))
 
     def recover(self):
         """Mark this Node as not failed"""
         self.failed = False
+        _logger.debug("Node %s recovers", self)
         History.add('recover', NodeAction(self))
 
     def remove(self):
         """Remove this Node from the system-wide lists of Nodes"""
         self.included = False
+        _logger.debug("Node %s removed from system", self)
         History.add('remove', NodeAction(self))
 
     def restore(self):
         """Restore this Node to the system-wide lists of Nodes"""
         self.included = True
+        _logger.debug("Node %s restored to system", self)
         History.add('add', NodeAction(self))
 
     def generate_sequence_number(self):
