@@ -191,16 +191,12 @@
       the <b>Put</b> request is processed by 3 nodes, but the <b>W</b> parameter is only 2 and so the final
       response isn't needed for the process to complete.
     </p>
-    <div class="highlight"><pre>
-#result python test_dynamo.py --seed 10 SimpleTestCase.test_simple_put
-    </pre></div>
+#bresult python test_dynamo.py --seed 10 SimpleTestCase.test_simple_put
     <p>
       Interspersing <b>Put</b> operations for two different keys, from two different clients makes the ladder
       diagram more complicated, but the underlying details are the same.
     </p>
-    <div class="highlight"><pre>
-#result python test_dynamo.py --seed 10 SimpleTestCase.test_double_put
-    </pre></div>
+#bresult python test_dynamo.py --seed 10 SimpleTestCase.test_double_put
 
 
     <a name="simple_get"><h2><b>Get</b>ting it Back</h2></a>
@@ -222,9 +218,7 @@
     <p>
       The whole process looks like the following:
     </p>
-    <div class="highlight"><pre>
-#result python test_dynamo.py --seed 10 SimpleTestCase.test_simple_get
-    </pre></div>
+#bresult python test_dynamo.py --seed 10 SimpleTestCase.test_simple_get
 
 
     <a name="failure"><h2>Coping With Failure</h2></a>
@@ -232,15 +226,11 @@
       Nothing we've written so far copes with failure.  If just one node were to fail, then because <b>N</b>
       is 3 and (say) <b>W</b> is 2, we might just cope:
     </p>
-    <div class="highlight"><pre>
-#result python test_dynamo.py --seed 10 SimpleTestCase.test_put1_fail_node2
-    </pre></div>
+#bresult python test_dynamo.py --seed 10 SimpleTestCase.test_put1_fail_node2
     <p>
       But if two nodes fail, then we're doomed:
     </p>
-    <div class="highlight"><pre>
-#result python test_dynamo.py --seed 10 SimpleTestCase.test_put1_fail_nodes23
-    </pre></div>
+#bresult python test_dynamo.py --seed 10 SimpleTestCase.test_put1_fail_nodes23
     <p>
       Almost everything we still need to add to the code is about engineering around the consequences of
       failures:
@@ -278,9 +268,7 @@
       To show this in action, we can see what happens if the first receiving node fails; the client eventually
       retries and picks a different node at random.
     </p>
-    <div class="highlight"><pre>
-#result python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_initial_node
-    </pre></div>
+#bresult python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_initial_node
 
     <p>
       Inside the Dynamo network, each node keeps track of the requests it has outstanding, and when a request
@@ -310,15 +298,11 @@
     <p>
       With these modifications, the failures shown earlier start to look more recoverable from:
     </p>
-    <div class="highlight"><pre>
-#result python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23
-    </pre></div>
+#bresult python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23
     <p>
       A subsequent request for the same key will skip the failed nodes automatically:
     </p>
-    <div class="highlight"><pre>
-#result python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_2
-    </pre></div>
+#bresult python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_2
     
     <a name="failrecover"><h2>Node Recovery Detection</h2></a>
     <p>
@@ -329,25 +313,17 @@
     <p>
       This <b>Ping</b> request will likely fail at first, which will keep the node on the failed list.
     </p>
-    <div class="highlight"><pre>
-#result python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_3
-    </pre></div>
+#bresult python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_3
     <p>
       But once a node recovers, some <b>Ping</b> will eventually succeed. However, a <b>Get</b> request after
       this recovery will not necessarily get the right answer: the different nodes that have been involved in
       storing values for the key along the way now have a different idea of what the most up-to-date value for
       that key is.  This means we'll need some way for the nodes to get back in sync.
     </p>
-
-    <div class="highlight"><pre>
-#result python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_4a
-    </pre></div>
-
+#bresult python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_4a
     <p>However, at this point a subsequent <b>Put</b> request will return to using the original preference list.
     </p>
-    <div class="highlight"><pre>
-#result python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_4b
-    </pre></div>
+#bresult python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_4b
 
     <a name="hintedhandoff"><h2>Hinted Handoff</h2></a>
     <p>
@@ -369,11 +345,7 @@
     <p>
       This results in the generation of some additional <b>Ping</b> messages.
     </p>
-
-    <div class="highlight"><pre>
-#result python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_5
-    </pre></div>
-
+#bresult python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_5
     <p>
       Finally, when node recovery is detected, the appropriate <b>Put</b> messages to resynchronize the failed
       node's state are sent.
@@ -383,10 +355,7 @@
     <p>
       This results in the recovered nodes discovering the state update that they'd missed out on.
     </p>
-
-    <div class="highlight"><pre>
-#result python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_6
-    </pre></div>
+#bresult python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_6
 
     <a name="merkle"><h2>Building Block: Merkle Trees (s4.7)</h2></a>
     <p>
@@ -554,16 +523,12 @@ print (v3 < converged_clock)
       it is updating.  In practical terms, this means that the client needs to preceded every <b>Put</b>
       operation with a <b>Get</b> operation to retrieve the appropriate metadata.
     </p>
-    <div class="highlight"><pre>
-#result python test_dynamo.py --seed 10 SimpleTestCase.test_get_put_get_put
-    </pre></div>
+#bresult python test_dynamo.py --seed 10 SimpleTestCase.test_get_put_get_put
     <p>
       For convenience, to cope with the situation where a client holds on to a key and makes multiple updates,
       we also return the new metadata on a <b>Put</b> response so it can be used for a subsequent <b>Put</b>:
     </p>
-    <div class="highlight"><pre>
-#result python test_dynamo.py --seed 10 SimpleTestCase.test_get_put_put
-    </pre></div>
+#bresult python test_dynamo.py --seed 10 SimpleTestCase.test_get_put_put
     <p>
       The Dynamo node that acts as the coordinator for the key updates the vector clock with its own sequence
       numbers:
@@ -576,9 +541,7 @@ print (v3 < converged_clock)
       &ndash; albeit with a vector clock that indicates multiple Dynamo nodes have been involved in the
       history of this key.
     </p>
-    <div class="highlight"><pre>
-#result python test_dynamo.py --seed 10 SimpleTestCase.test_metadata_simple_fail
-    </pre></div>
+#bresult python test_dynamo.py --seed 10 SimpleTestCase.test_metadata_simple_fail
     <p>
       Of course, it's not just nodes that can fail &ndash; sometimes, the links between them fail too.  The
       worst scenario that this leads to is <i>network partition</i>: half of the network is on one side of the

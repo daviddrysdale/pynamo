@@ -17,7 +17,7 @@ RE_PYFILE = re.compile(r'^.*\.py')
 RE_INCLUDE = re.compile(r'^\s*#include\s+(?P<filename>[^\s:]*)(:(?P<partid>\w+))?\s*$')
 RE_DIFF = re.compile(r'^\s*#diff\s+(?P<old_filename>[^:]*)(:(?P<old_partid>\w+))?\s*'
                      r'(?P<new_filename>[^:]*)(:(?P<new_partid>\w+))?\s*$')
-RE_RESULT = re.compile(r'^\s*#result\s+(?P<command>.*)$')
+RE_RESULT = re.compile(r'^\s*#(?P<b>b?)result\s+(?P<command>.*)$')
 RE_PYTHON = re.compile(r'^\s*#python\s*$')
 RE_ENDPYTHON = re.compile(r'^\s*#endpython\s*$')
 RE_IGNORE = re.compile(r'IGNOREBEYOND')
@@ -120,7 +120,11 @@ for line in fileinput.input():
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
         p_stdout, p_stderr = proc.communicate()
+        if m_res.group('b') == 'b':  # surround with HTML
+            print HTML_PRE_START
         print p_stdout.rstrip(),
+        if m_res.group('b') == 'b':
+            print HTML_PRE_END
     else:
         print line,
     
