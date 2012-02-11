@@ -1,6 +1,13 @@
 """Messages between Dynamo nodes"""
 from message import Message, ResponseMessage
 
+_show_metadata = False
+
+def _show_value(value, metadata):
+    if _show_metadata:
+        return "%s@%s" % (value, metadata)
+    else:
+        return "%s" % value
 
 class DynamoRequestMessage(Message):
     """Base class for Dynamo request messages; all include the key for the data object in question"""
@@ -21,7 +28,7 @@ class DynamoResponseMessage(ResponseMessage):
         self.metadata = metadata
 
     def __str__(self):
-        return "%s(%s=%s)" % (self.__class__.__name__, self.key, self.value)
+        return "%s(%s=%s)" % (self.__class__.__name__, self.key, _show_value(self.value, self.metadata))
 
 
 class ClientPut(DynamoRequestMessage):
@@ -31,12 +38,14 @@ class ClientPut(DynamoRequestMessage):
         self.metadata = metadata
 
     def __str__(self):
-        return "ClientPut(%s=%s)" % (self.key, self.value)
+        return "ClientPut(%s=%s)" % (self.key, _show_value(self.value, self.metadata))
 
 
 class ClientPutRsp(DynamoResponseMessage):
-    def __init__(self, req):
-        super(ClientPutRsp, self).__init__(req, req.value, req.metadata)
+    def __init__(self, req, metadata=None):
+        if metadata is None:
+            metadata = req.metadata
+        super(ClientPutRsp, self).__init__(req, req.value, metadata)
 
 
 class PutReq(DynamoRequestMessage):
@@ -48,9 +57,12 @@ class PutReq(DynamoRequestMessage):
 
     def __str__(self):
         if self.handoff is None:
-            return "PutReq(%s=%s)" % (self.key, self.value)
+            return "PutReq(%s=%s)" % (self.key, _show_value(self.value, self.metadata))
         else:
-            return "PutReq(%s=%s, handoff=(%s))" % (self.key, self.value, ",".join([str(x) for x in self.handoff]))
+            return ("PutReq(%s=%s, handoff=(%s))" % 
+                    (self.key, 
+                     _show_value(self.value, self.metadata), 
+                     ",".join([str(x) for x in self.handoff])))
 
 
 class PutRsp(DynamoResponseMessage):
@@ -75,10 +87,8 @@ class GetRsp(DynamoResponseMessage):
 
 
 class PingReq(Message):
-    def __str__(self):
-        return "PingReq"
+    pass
 
 
 class PingRsp(ResponseMessage):
-    def __str__(self):
-        return "PingRsp"
+    pass
