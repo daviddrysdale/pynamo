@@ -21,7 +21,8 @@ class Framework(object):
     @classmethod
     def reset(cls):
         cls.cuts = []
-        cls.queue = deque()
+        cls.queue = deque([])
+        cls.pending_timers = {}
 
     @classmethod
     def cut_wires(cls, from_nodes, to_nodes):
