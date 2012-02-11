@@ -1,6 +1,6 @@
 """Implementation of Dynamo
 
-Third iteration: add pings to detect recovered nodes, use Merkle tree to store data"""
+4th iteration: add hinted handoffs"""
 import copy
 import random
 import logging
@@ -77,6 +77,13 @@ class DynamoNode(Node):
         recovered_node = pingmsg.from_node
         while recovered_node in self.failed_nodes:
             self.failed_nodes.remove(recovered_node)
+        if recovered_node in self.pending_handoffs:
+            for key in self.pending_handoffs[recovered_node]:
+                # Send our latest value for this key
+                (value, metadata) = self.retrieve(key)
+                putmsg = PutReq(self, recovered_node, key, value, metadata)
+                Framework.send_message(putmsg)
+            del self.pending_handoffs[recovered_node]
 
 # PART rsp_timer_pop
     def rsp_timer_pop(self, reqmsg):
@@ -105,7 +112,8 @@ class DynamoNode(Node):
 
 # PART rcv_clientput
     def rcv_clientput(self, msg):
-        preference_list = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N, self.failed_nodes)[0]
+        preference_list, avoided = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N, self.failed_nodes)
+        non_extra_count = DynamoNode.N - len(avoided)
         # Determine if we are in the list
         if self not in preference_list:
             # Forward to the coordinator for this key
@@ -123,9 +131,14 @@ class DynamoNode(Node):
             self.pending_put_rsp[seqno] = set()
             self.pending_put_msg[seqno] = msg
             reqcount = 0
-            for node in preference_list:
+            for ii, node in enumerate(preference_list):
+                if ii >= non_extra_count:
+                    # This is an extra node that's only include because of a failed node
+                    handoff = avoided
+                else:
+                    handoff = None
                 # Send message to get node in preference list to store
-                putmsg = PutReq(self, node, msg.key, msg.value, metadata, msg_id=seqno)
+                putmsg = PutReq(self, node, msg.key, msg.value, metadata, msg_id=seqno, handoff=handoff)
                 self.pending_req[PutReq][seqno].add(putmsg)
                 Framework.send_message(putmsg)
                 reqcount = reqcount + 1
@@ -161,6 +174,12 @@ class DynamoNode(Node):
     def rcv_put(self, putmsg):
         _logger.info("%s: store %s=%s", self, putmsg.key, putmsg.value)
         self.store(putmsg.key, putmsg.value, putmsg.metadata)
+        if putmsg.handoff is not None:
+            for failed_node in putmsg.handoff:
+                self.failed_nodes.append(failed_node)
+                if failed_node not in self.pending_handoffs:
+                    self.pending_handoffs[failed_node] = set()
+                self.pending_handoffs[failed_node].add(putmsg.key)
         putrsp = PutRsp(putmsg)
         Framework.send_message(putrsp)
 

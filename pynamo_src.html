@@ -360,12 +360,12 @@
       The first change to do this is at the sending node, filling in a <code>handoff</code> parameter on
       the <b>Put</b> message that is sent to the extra nodes.
     </p>
-#diff dynamo3.py:rcv_clientput dynamo.py:rcv_clientput
+#diff dynamo3.py:rcv_clientput dynamo4.py:rcv_clientput
     <p>
       The next change is at the receiving node, which explictly starts to monitor the failed nodes for
       recovery, and tracks which keys need to be propagated on recovery.
     </p>
-#diff dynamo3.py:rcv_put dynamo.py:rcv_put
+#diff dynamo3.py:rcv_put dynamo4.py:rcv_put
     <p>
       This results in the generation of some additional <b>Ping</b> messages.
     </p>
@@ -378,7 +378,7 @@
       Finally, when node recovery is detected, the appropriate <b>Put</b> messages to resynchronize the failed
       node's state are sent.
     </p>
-#diff dynamo3.py:retry_failed_node dynamo.py:retry_failed_node
+#diff dynamo3.py:retry_failed_node dynamo4.py:retry_failed_node
 
     <p>
       This results in the recovered nodes discovering the state update that they'd missed out on.

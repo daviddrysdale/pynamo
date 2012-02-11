@@ -10,6 +10,7 @@ from history import History
 import dynamo1
 import dynamo2
 import dynamo3
+import dynamo4
 import dynamo as dynamo99
 
 
@@ -177,7 +178,7 @@ class SimpleTestCase(unittest.TestCase):
 
     def test_put2_fail_nodes23_5(self):
         """Show Put after a failure including handoff, and the resulting Pings"""
-        (a, pref_list) = self.put_fail_nodes23(dynamo99)
+        (a, pref_list) = self.put_fail_nodes23(dynamo4)
         coordinator = pref_list[0]
         from_line = len(History.history)
         a.put('K1', None, 2, destnode=coordinator)  # Send client request to coordinator for clarity
@@ -186,7 +187,7 @@ class SimpleTestCase(unittest.TestCase):
 
     def test_put2_fail_nodes23_6(self):
         """Show hinted handoff after recovery"""
-        (a, pref_list) = self.put_fail_nodes23(dynamo99)
+        (a, pref_list) = self.put_fail_nodes23(dynamo4)
         coordinator = pref_list[0]
         a.put('K1', None, 2, destnode=coordinator)  # Send client request to coordinator for clarity
         Framework.schedule(timers_to_process=10)
