@@ -25,7 +25,7 @@ class Framework(object):
 
     @classmethod
     def cut_wires(cls, from_nodes, to_nodes):
-        _logger.info("Cut %s -> %s", [str(x) for x in from_nodes], [str(x) for x in to_nodes])
+        History.add("announce", "Cut %s -> %s" % ([str(x) for x in from_nodes], [str(x) for x in to_nodes]))
         cls.cuts.append((from_nodes, to_nodes))
 
     @classmethod
