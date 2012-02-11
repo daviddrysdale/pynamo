@@ -315,11 +315,10 @@ class SimpleTestCase(unittest.TestCase):
 
         # Get-then-Put from b
         b.get('K1', destnode=coordinator)
-        Framework.schedule(timers_to_process=4)
+        Framework.schedule(timers_to_process=6)
         getrsp = b.last_msg
         b.put('K1', getrsp.metadata, 21, destnode=A)
         Framework.schedule(timers_to_process=3)
-        b_metadata = [b.last_msg.metadata]  # PutRsp has a single VectorClock
 
         # Display, tweaking ordering of nodes so partition is in the middle
         print History.ladder(force_include=all_nodes, spacing=16, key=lambda x: ' ' if x == b else x.name)
