@@ -81,10 +81,12 @@ class DynamoNode(Node):
 # PART rsp_timer_pop
     def rsp_timer_pop(self, reqmsg):
         # no response to this request; treat the destination node as failed
+        _logger.info("Node %s now treating node %s as failed", self, reqmsg.to_node)
         self.failed_nodes.append(reqmsg.to_node)
         failed_requests = Framework.cancel_timers_to(reqmsg.to_node)
-        for reqmsg in failed_requests:
-            self.retry_request(reqmsg)
+        failed_requests.append(reqmsg)
+        for failedmsg in failed_requests:
+            self.retry_request(failedmsg)
 
     def retry_request(self, reqmsg):
         if not isinstance(reqmsg, DynamoRequestMessage):
