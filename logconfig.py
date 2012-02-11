@@ -18,7 +18,7 @@ def init_logging():
     logger = logging.getLogger('dynamo')
     logger.setLevel(LOG_LEVEL)
     formatstring = ("%(asctime)s|%(levelname)-7s|"
-                    "%(filename)12s|%(lineno)3s|%(message)s")
+                    "%(filename)15s|%(lineno)3s|%(message)s")
     formatter = logging.Formatter(formatstring)
     file_handler = logging.handlers.RotatingFileHandler(LOG_FILENAME, maxBytes=1000000, backupCount=5)
     file_handler.setFormatter(formatter)
