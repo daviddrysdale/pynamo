@@ -32,7 +32,7 @@ pynamo.tgz: $(ALL_FILES)
 	tar czf $@ $^
 
 clean: 
-	rm -f *.pyc *,cover .coverage pynamo.log pynamo.html
+	rm -f *.pyc *,cover .coverage pynamo.log* pynamo.html
 
 lint:
 	pyflakes *.py
