@@ -14,7 +14,7 @@ class VectorClock(object):
             raise Exception("Node %s has gone backwards from %d to %d" %
                             (node, self.clock[node], counter))
         self.clock[node] = counter
-        return self
+        return self  # allow chaining of .update() operations
 
     def __str__(self):
         return "{%s}" % ", ".join(["%s:%d" % (node, self.clock[node])
