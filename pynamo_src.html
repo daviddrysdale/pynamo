@@ -63,7 +63,6 @@
       <li><a href="#vector_clock">Building Block: Vector Clocks (s4.4)</a></li>
       <li><a href="#divergence">Detecting Divergence</a></li>
       <li><a href="#divergence_repair">Repairing Divergence</a></li>
-      <li><a href="#other_errors">Other Error Cases</a></li>
       
       <li><a href="#framework">Appendix: Node Simulation Framework</a></li>
     </ul>
@@ -549,22 +548,28 @@ print (v3 < converged_clock)
       Network partitions are particularly bad because different clients can update keys on the either side of
       the partition, resulting in different, incompatible, values for the keys.  
     </p>
-#bresult python test_dynamo.py --seed 10 SimpleTestCase.test_partition
-
-
-
-
-
+#bresult python test_dynamo.py --seed 11 SimpleTestCase.test_partition
     <p>
-      Once the partition is repaired, what's to be done about the inconsistent values?
+      This is where the vector clock helps; after the network is repaired, the next <b>Get</b> operation
+      returns a divergent set of metadata, indicating that there are inconsistent values for the key that need
+      to be dealt with.
     </p>
-    ???
+#bresult python test_dynamo.py --seed 11 SimpleTestCase.test_partition_detect
+
     <a name="divergence_repair"><h2>Repairing Divergence</h2></a>
-    ???
-    
-    <a name="other_errors"><h2>Other Error Cases</h2></a>
-    ??? failure of coordinator (1st node in preference list) on <b>Put</b> request
-    
+    <p>
+      The data stored by Dynamo is opaque to the system, which means that Dynamo itself has no way of figuring
+      out how to deal with the inconsistent data.  Therefore, the problem is pushed out to the client: the
+      client has to figure it out, and the next <b>Put</b> message that includes a divergent set of vector
+      clocks is assumed to subsume them all.
+    </p>
+#diff dynamo4.py:clientnode dynamo.py:clientnode
+    <p>
+      Following on from the sequences of the last section, this results in a <b>Put</b> operation with a
+      single converged vector clock.
+    </p>
+#bresult python test_dynamo.py --seed 11 SimpleTestCase.test_partition_restore
+
     
     <a name="framework"><h2>Appendix: Node Simulation Framework</h2></a>
     <p>

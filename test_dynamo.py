@@ -6,6 +6,7 @@ import unittest
 import logging
 
 from framework import Framework, reset_all
+from node import Node
 from history import History
 import logconfig
 
@@ -280,7 +281,7 @@ class SimpleTestCase(unittest.TestCase):
         print History.ladder(force_include=pref_list, start_line=from_line, spacing=16)
         dynamomessages._show_metadata = False
 
-    def test_partition(self):
+    def partition(self):
         """Show a network partition"""
         dynamomessages._show_metadata = True
         cls = dynamo99
@@ -319,10 +320,53 @@ class SimpleTestCase(unittest.TestCase):
         getrsp = b.last_msg
         b.put('K1', getrsp.metadata, 21, destnode=A)
         Framework.schedule(timers_to_process=3)
+        return all_nodes
+
+    def test_partition(self):
+        dynamomessages._show_metadata = True
+        all_nodes = self.partition()
 
         # Display, tweaking ordering of nodes so partition is in the middle
-        print History.ladder(force_include=all_nodes, spacing=16, key=lambda x: ' ' if x == b else x.name)
+        print History.ladder(force_include=all_nodes, spacing=16, key=lambda x: ' ' if x.name == 'b' else x.name)
         dynamomessages._show_metadata = False
+
+    def partition_repair(self):
+        # Repair the partition
+        History.add("announce", "Repair network partition")
+        Framework.cuts = []
+        Framework.schedule(timers_to_process=12)
+
+        # Get from node a
+        a = Node.node['a']
+        a.get('K1')
+        Framework.schedule(timers_to_process=0)
+
+    def test_partition_detect(self):
+        dynamomessages._show_metadata = True
+        all_nodes = self.partition()
+        from_line = len(History.history)
+        self.partition_repair()
+
+        # Display, tweaking ordering of nodes so partition is in the middle
+        print History.ladder(force_include=all_nodes, start_line=from_line, spacing=16, key=lambda x: ' ' if x.name == 'b' else x.name)
+        dynamomessages._show_metadata = False
+
+    def test_partition_restore(self):
+        dynamomessages._show_metadata = True
+        all_nodes = self.partition()
+        self.partition_repair()
+        from_line = len(History.history)
+
+        # Put a new value, which coalesces
+        a = Node.node['a']
+        getrsp = a.last_msg
+        a.put('K1', getrsp.metadata, 101)
+        Framework.schedule(timers_to_process=0)
+
+        # Display, tweaking ordering of nodes so partition is in the middle
+        print History.ladder(force_include=all_nodes, start_line=from_line, spacing=16, key=lambda x: ' ' if x.name == 'b' else x.name)
+        dynamomessages._show_metadata = False
+        
 
 if __name__ == "__main__":
     for ii in range(1, len(sys.argv) - 1):  # pragma: no cover
