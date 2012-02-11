@@ -10,18 +10,19 @@ class History(object):
     History of everything that happened in the framework, as a list of (action, object) pairs.
 
     Possible values for the action are:
-      'send'    - message sent
-      'forward' - message forwarded
-      'drop'    - message dropped due to node down
-      'cut'     - message dropped due to comms down
-      'deliver' - message arrived
-      'start'   - timer started
-      'cancel'  - timer cancelled
-      'pop'     - timer popped
-      'fail'    - node failed
-      'recover' - node recovered
-      'add'     - node added to configuration
-      'remove'  - node removed from configuration
+      'send'     - message sent
+      'forward'  - message forwarded
+      'drop'     - message dropped due to node down
+      'cut'      - message dropped due to comms down
+      'deliver'  - message arrived
+      'start'    - timer started
+      'cancel'   - timer cancelled
+      'pop'      - timer popped
+      'fail'     - node failed
+      'recover'  - node recovered
+      'add'      - node added to configuration
+      'remove'   - node removed from configuration
+      'announce' - overall message to be included in output
     """
     history = []
 
@@ -63,7 +64,7 @@ class History(object):
         #     0 1 2 3 4 5 6 7 8
         #     A . . . B . . . C
         # If m=number of cols between nodes and N=number of nodes
-        # then overall line lengh = ((N-1)*(m+1)) + 1
+        # then overall line length = ((N-1)*(m+1)) + 1
         # (example above has N=3 m=3 => len=9=2*4+1)
         linelen = ((num_nodes - 1) * (spacing + 1)) + 1
 
@@ -190,6 +191,10 @@ class History(object):
             elif action == "add":
                 included_nodes.add(msg.from_node)
                 continue  # don't emit a line
+            elif action == "announce":
+                indent = "*" * ((linelen - len(msg) - 4) // 2)
+                lines.append(' %s %s %s ' % (indent, msg, indent))
+                continue  # line already emitted
 
             # Put the array of characters together into a line, and add that to the list
             if lineno > start_line:
