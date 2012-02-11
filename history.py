@@ -36,7 +36,7 @@ class History(object):
         cls.history.append((action, obj))
 
     @classmethod
-    def nodelist(cls, force_include=None):
+    def nodelist(cls, force_include=None, key=lambda x: x.name):
         """Return a list of all nodes involved in the history"""
         nodeset = set()
         for (action, msg) in cls.history:
@@ -48,14 +48,14 @@ class History(object):
             for node in force_include:
                 nodeset.add(node)
         nodelist = list(nodeset)
-        nodelist.sort(key=lambda x: x.name)
+        nodelist.sort(key=key)
         return nodelist
 
     @classmethod
-    def ladder(cls, spacing=20, verbose_timers=False, start_line=0, force_include=None):
+    def ladder(cls, spacing=20, verbose_timers=False, start_line=0, force_include=None, key=lambda x: x.name):
         """Generate the ladder diagram for a message history"""
         # First spin through all of the message history to find the set of Nodes involved
-        nodelist = cls.nodelist(force_include)
+        nodelist = cls.nodelist(force_include, key=key)
         num_nodes = len(nodelist)
         included_nodes = set()
 
