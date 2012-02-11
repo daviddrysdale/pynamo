@@ -48,6 +48,12 @@ class DynamoNode(Node):
         # Run a timer to retry failed nodes
         self.retry_failed_node("retry")
 
+# PART reset
+    @classmethod
+    def reset(cls):
+        cls.nodelist = []
+        cls.chash = ConsistentHashTable(cls.nodelist, cls.T)
+
 # PART storage
     def store(self, key, value, metadata):
         self.local_store[key] = (value, metadata)

@@ -41,6 +41,12 @@ class DynamoNode(Node):
         DynamoNode.nodelist.append(self)
         DynamoNode.chash = ConsistentHashTable(DynamoNode.nodelist, DynamoNode.T)
 
+# PART reset
+    @classmethod
+    def reset(cls):
+        cls.nodelist = []
+        cls.chash = ConsistentHashTable(cls.nodelist, cls.T)
+
 # PART storage
     def store(self, key, value, metadata):
         self.local_store[key] = (value, metadata)

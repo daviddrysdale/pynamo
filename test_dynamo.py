@@ -25,6 +25,11 @@ class SimpleTestCase(unittest.TestCase):
     def setUp(self):
         _logger.info("Reset for next test")
         reset_all()
+        dynamo1.DynamoNode.reset()
+        dynamo2.DynamoNode.reset()
+        dynamo3.DynamoNode.reset()
+        dynamo4.DynamoNode.reset()
+        dynamo99.DynamoNode.reset()
 
     def tearDown(self):
         _logger.info("Reset after last test")
