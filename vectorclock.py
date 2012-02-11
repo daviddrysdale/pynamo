@@ -69,6 +69,31 @@ class VectorClock(object):
                 results.append(copy.deepcopy(vc))
         return results
 
+# PART coalesce2
+    @classmethod
+    def coalesce2(cls, vcs):
+        """Coalesce a container of (object, VectorClock) tuples.
+
+        The result is a list of (object, VectorClock) tuples; each input
+        VectorClock is a direct ancestor of one of the results, and no result
+        entry is a direct ancestor of any other result entry."""
+        results = []
+        for obj, vc in vcs:
+            # See if this vector-clock subsumes or is subsumed by anything already present
+            subsumed = False
+            for ii, (resultobj, resultvc) in enumerate(results):
+                if vc <= resultvc:  # subsumed by existing answer
+                    subsumed = True
+                    break
+
+                if resultvc < vc:  # subsumes existing answer so replace it
+                    results[ii] = (obj, copy.deepcopy(vc))
+                    subsumed = True
+                    break
+            if not subsumed:
+                results.append((obj, copy.deepcopy(vc)))
+        return results
+
 # PART converge
     @classmethod
     def converge(cls, vcs):
