@@ -1,4 +1,6 @@
-"""Implementation of Dynamo"""
+"""Implementation of Dynamo
+
+Final iteration: add use of vector clocks for metadata"""
 import copy
 import random
 import logging

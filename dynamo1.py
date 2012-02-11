@@ -1,4 +1,6 @@
-"""Implementation of Dynamo"""
+"""Implementation of Dynamo
+
+Initial iteration: optimistically assumes most things are going to work"""
 import random
 import logging
 

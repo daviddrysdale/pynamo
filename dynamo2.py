@@ -1,4 +1,6 @@
-"""Implementation of Dynamo"""
+"""Implementation of Dynamo
+
+Second iteration, adding detection of missing responses and expansion of the preference list."""
 import copy
 import random
 import logging

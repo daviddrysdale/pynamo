@@ -1,4 +1,6 @@
-"""Implementation of Dynamo"""
+"""Implementation of Dynamo
+
+Third iteration: add pings to detect recovered nodes, hinted handoffs, use Merkle tree to store data"""
 import copy
 import random
 import logging
