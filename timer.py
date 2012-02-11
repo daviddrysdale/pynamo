@@ -35,10 +35,10 @@ class TimerManager(object):
         if node.failed:
             return None
         tmsg = Timer(node, reason, callback=callback)
-        _logger.debug("Start timer %s for node %s reason %s", id(tmsg), node, reason)
         History.add("start", tmsg)
         if priority is None:  # default to priority of the node
             priority = _priority(tmsg)
+        _logger.debug("Start timer %s prio %d for node %s reason %s", id(tmsg), priority, node, reason)
         # Figure out where in the list to insert
         for ii in range(len(cls.pending)):
             if priority > cls.pending[ii][0]:
