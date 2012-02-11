@@ -3,6 +3,7 @@ from message import Message, ResponseMessage
 
 _show_metadata = False
 
+
 def _show_value(value, metadata):
     if _show_metadata:
         try:
@@ -11,6 +12,7 @@ def _show_value(value, metadata):
             return "%s@%s" % (value, metadata)
     else:
         return "%s" % value
+
 
 class DynamoRequestMessage(Message):
     """Base class for Dynamo request messages; all include the key for the data object in question"""
@@ -62,9 +64,9 @@ class PutReq(DynamoRequestMessage):
         if self.handoff is None:
             return "PutReq(%s=%s)" % (self.key, _show_value(self.value, self.metadata))
         else:
-            return ("PutReq(%s=%s, handoff=(%s))" % 
-                    (self.key, 
-                     _show_value(self.value, self.metadata), 
+            return ("PutReq(%s=%s, handoff=(%s))" %
+                    (self.key,
+                     _show_value(self.value, self.metadata),
                      ",".join([str(x) for x in self.handoff])))
 
 
