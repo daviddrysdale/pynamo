@@ -25,4 +25,4 @@ def init_logging():
     logger.addHandler(file_handler)
     logger.info('Logger initialized, input filtering at level %d to file %s',
                 LOG_LEVEL, LOG_FILENAME)
-    logging.sugi_init_done = True
+    logging.framework_init_done = True
