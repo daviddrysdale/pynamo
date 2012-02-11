@@ -5,7 +5,10 @@ _show_metadata = False
 
 def _show_value(value, metadata):
     if _show_metadata:
-        return "%s@%s" % (value, metadata)
+        try:
+            return "%s@[%s]" % (value, ",".join([str(x) for x in metadata]))
+        except TypeError:
+            return "%s@%s" % (value, metadata)
     else:
         return "%s" % value
 
