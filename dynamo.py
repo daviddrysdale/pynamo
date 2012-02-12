@@ -288,12 +288,14 @@ class DynamoClientNode(Node):
             metadata = VectorClock.converge(metadata)
         putmsg = ClientPut(self, destnode, key, value, metadata)
         Framework.send_message(putmsg)
+        return putmsg
 
     def get(self, key, destnode=None):
         if destnode is None:  # Pick a random node to send the request to
             destnode = random.choice(DynamoNode.nodelist)
         getmsg = ClientGet(self, destnode, key)
         Framework.send_message(getmsg)
+        return getmsg
 
     def rsp_timer_pop(self, reqmsg):
         if isinstance(reqmsg, ClientPut):  # retry
