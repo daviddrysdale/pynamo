@@ -6,7 +6,7 @@ import logging.handlers
 if not hasattr(logging, "framework_init_done"):
     logging.framework_init_done = False
 
-LOG_FILENAME = 'dynamo.log'
+LOG_FILENAME = 'pynamo.log'
 LOG_LEVEL = logging.DEBUG
 
 
