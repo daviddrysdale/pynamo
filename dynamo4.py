@@ -272,6 +272,7 @@ class DynamoNode(Node):
 # PART clientnode
 class DynamoClientNode(Node):
     timer_priority = 17
+
     def put(self, key, metadata, value, destnode=None):
         if destnode is None:  # Pick a random node to send the request to
             destnode = random.choice(DynamoNode.nodelist)

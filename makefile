@@ -36,4 +36,4 @@ clean:
 
 lint:
 	pyflakes *.py
-	pep8 --repeat *.py
+	pep8 --repeat --ignore E501 *.py

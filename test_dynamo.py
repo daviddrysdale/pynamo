@@ -242,7 +242,7 @@ class SimpleTestCase(unittest.TestCase):
 
     def get_put_put(self, a, coordinator):
         # Assume .get_put_get_put() has happened already.
-        # Send in a get-then-put-put.  
+        # Send in a get-then-put-put.
         a.get('K1', destnode=coordinator)
         Framework.schedule(timers_to_process=0)
         getrsp = a.last_msg
@@ -366,7 +366,7 @@ class SimpleTestCase(unittest.TestCase):
         # Display, tweaking ordering of nodes so partition is in the middle
         print History.ladder(force_include=all_nodes, start_line=from_line, spacing=16, key=lambda x: ' ' if x.name == 'b' else x.name)
         dynamomessages._show_metadata = False
-        
+
 
 if __name__ == "__main__":
     for ii in range(1, len(sys.argv) - 1):  # pragma: no cover
