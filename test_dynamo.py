@@ -367,6 +367,24 @@ class SimpleTestCase(unittest.TestCase):
         print History.ladder(force_include=all_nodes, start_line=from_line, spacing=16, key=lambda x: ' ' if x.name == 'b' else x.name)
         dynamomessages._show_metadata = False
 
+    def test_partition_detect_metadata(self):
+        self.partition()
+        self.partition_repair()
+        # Just output the final diverged metadata
+        a = Node.node['a']
+        getrsp = a.last_msg
+        print "%s@[%s]" % (getrsp.value, ",".join([str(x) for x in getrsp.metadata]))
+
+    def test_partition_restore_metadata(self):
+        self.partition()
+        self.partition_repair()
+        # Put a new value, which coalesces
+        a = Node.node['a']
+        getrsp = a.last_msg
+        putmsg = a.put('K1', getrsp.metadata, 101)
+        Framework.schedule(timers_to_process=0)
+        print putmsg.metadata
+
 
 if __name__ == "__main__":
     for ii in range(1, len(sys.argv) - 1):  # pragma: no cover

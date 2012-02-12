@@ -551,8 +551,11 @@ print (v3 < converged_clock)
 #bresult python test_dynamo.py --seed 11 SimpleTestCase.test_partition
     <p>
       This is where the vector clock helps; after the network is repaired, the next <b>Get</b> operation
-      returns a divergent set of metadata, indicating that there are inconsistent values for the key that need
-      to be dealt with.
+      returns a divergent set of metadata &ndash; <b><code>
+#result python test_dynamo.py --seed 11 SimpleTestCase.test_partition_detect_metadata
+      </code></b> indicating two possible values for the key, with two associated vector clocks.
+      This indicates that there are inconsistent values for the key that
+      need to be dealt with.
     </p>
 #bresult python test_dynamo.py --seed 11 SimpleTestCase.test_partition_detect
 
@@ -566,11 +569,13 @@ print (v3 < converged_clock)
 #diff dynamo4.py:clientnode dynamo.py:clientnode
     <p>
       Following on from the sequences of the last section, this results in a <b>Put</b> operation with a
-      single converged vector clock.
+      single converged vector clock <b><code>
+#result python test_dynamo.py --seed 11 SimpleTestCase.test_partition_restore_metadata
+      </b></code>.
     </p>
 #bresult python test_dynamo.py --seed 11 SimpleTestCase.test_partition_restore
 
-    
+
     <a name="framework"><h2>Appendix: Node Simulation Framework</h2></a>
     <p>
       The code here is built on a framework that simulates nodes and the messages between them.  The modules
