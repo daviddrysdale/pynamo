@@ -58,8 +58,10 @@
       <li><a href="#faildetect">Node Failure Detection (s4.8.3)</a></li>
       <li><a href="#failrecover">Node Recovery Detection</a></li>
       <li><a href="#hintedhandoff">Hinted Handoff</a></li>
+      <!-- 
       <li><a href="#merkle">Building Block: Merkle Trees (s4.7)</a></li>
       <li><a href="#catchup">Catchup</a></li>
+      -->
       <li><a href="#vector_clock">Building Block: Vector Clocks (s4.4)</a></li>
       <li><a href="#divergence">Detecting Divergence</a></li>
       <li><a href="#divergence_repair">Repairing Divergence</a></li>
@@ -358,6 +360,7 @@
     </p>
 #bresult python test_dynamo.py --seed 10 SimpleTestCase.test_put2_fail_nodes23_6
 
+<!--
     <a name="merkle"><h2>Building Block: Merkle Trees (s4.7)</h2></a>
     <p>
       A Merkle tree is a tree structure describing a data set where
@@ -420,6 +423,7 @@ print mtree.root.value.hexdigest()
 
     <a name="catchup"><h2>Catchup</h2></a>
     ???
+-->
 
     <a name="vector_clock"><h2>Building Block: Vector Clocks (s4.4)</h2></a>
     <p>
@@ -588,6 +592,9 @@ print (v3 < converged_clock)
       a real implementation.
     </p>
     <ul>
+      <li><b>Anti-entropy with Merkle trees</b>: In the long run, nodes will drift out of synchronization.  A 
+        <a href="http://en.wikipedia.org/wiki/Hash_tree">Merkle tree</a> can be used to maintain
+        synchronization for shared key ranges.</li>
       <li><b>Deletion after hinted handoff</b>: Once a <a href="#hintedhandoff">hinted handoff</a>
         has completed and the original node from the preference list has taken the data, the additional node
         could delete its superfluous copy of the data (section 4.6).</li>
