@@ -63,6 +63,7 @@
       <li><a href="#vector_clock">Building Block: Vector Clocks (s4.4)</a></li>
       <li><a href="#divergence">Detecting Divergence</a></li>
       <li><a href="#divergence_repair">Repairing Divergence</a></li>
+      <li><a href="#rest">What's Left</a></li>
 
       <li><a href="#framework">Appendix: Node Simulation Framework</a></li>
       <li><a href="#epilog">Epilog: Code Location &amp; Licenses</a></li>
@@ -576,6 +577,43 @@ print (v3 < converged_clock)
     </p>
 #bresult python test_dynamo.py --seed 11 SimpleTestCase.test_partition_restore
 
+    <a name="rest"><h2>What's Left</h2></a>
+    <blockquote>
+      <i>In theory, there's no difference between theory and practice. In practice there is.</i>
+    </blockquote>
+    <p>
+      We've implemented some of the key ideas from the Dynamo paper here, but we haven't implemented
+      everything in the paper.  There's a summary of the parts we've skipped below; the length of this list
+      gives an indication of just how many reality-based complications are involved in turning Dynamo into 
+      a real implementation.
+    </p>
+    <ul>
+      <li><b>Deletion after hinted handoff</b>: Once a <a href="#hintedhandoff">hinted handoff</a>
+        has completed and the original node from the preference list has taken the data, the additional node
+        could delete its superfluous copy of the data (section 4.6).</li>
+      <li><b>Node membership synchronization</b>: Because the system here is simulated, any
+        additions or removals of a node are instantly visible to all other nodes in the system.  This means
+        that we don't have to worry about the real-world concern of keeping knowledge about the potential set
+        of nodes in sync.  Section 4.8 of the Dynamo paper
+        describes <a href="http://en.wikipedia.org/wiki/Gossip_protocol">gossip</a>-based systems for doing this in a
+        real, asynchronous set of nodes.</li>
+      <li><b>Divergence repair using timestamps</b>: One possibility for automatic divergence repair is just
+        to allow "last timestamp wins" (section 6).</li>
+      <li><b>Vector clock truncation by timestamp</b>: Vector clocks have unbounded growth as the set of nodes
+        in the system varies over time.  This can be ameliorated by using timestamps to limit growth described in
+        (section 4.4)</li>
+      <li><b>Client operation timeouts</b>: In this simulated system, client requests are retried forever
+        rather than giving up and returning an error to the client (section 5).</li>
+      <li><b>Read repair</b>: If a <b>Get</b> response arrives just after quorum has been reached (and
+        the <b>ClientGet</b> response returned), and has an inconsistent value for the key, the read coordinator
+        node could update the laggy node with latest (quorum) value for the key (section 5).</li>
+      <li><b>Coordinator chosen for speed</b>: Given the prevalence of get-then-put sequences, the coordinator
+      for a <b>Put</b> could be chosen to be the node that responded fastest to the <b>Get</b> (section 5)</li>
+      <li><b>Alternative load distribution strategies</b>: Section 6.2 of the paper gives two other strategies (2 and 3)
+        for consistent hash distribution.</li>
+      <li><b>Differing prioritizations</b>: Foreground (i.e. client-driven) and background (repair,
+      synchronization) tasks could be assigned different scheduling priorities (section 6.5)</li>
+    </ul>
 
     <a name="framework"><h2>Appendix: Node Simulation Framework</h2></a>
     <p>
