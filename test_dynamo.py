@@ -316,7 +316,8 @@ class SimpleTestCase(unittest.TestCase):
 
         # Get-then-Put from b
         b.get('K1', destnode=coordinator)
-        Framework.schedule(timers_to_process=6)
+        while b.last_msg is None:  # Wait for rsp to arrive
+            Framework.schedule(timers_to_process=1)
         getrsp = b.last_msg
         b.put('K1', getrsp.metadata, 21, destnode=A)
         Framework.schedule(timers_to_process=3)

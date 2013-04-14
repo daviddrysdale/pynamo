@@ -276,6 +276,10 @@ class DynamoNode(Node):
 class DynamoClientNode(Node):
     timer_priority = 17
 
+    def __init__(self, name=None):
+        super(DynamoClientNode, self).__init__(name)
+        self.last_msg = None  # Track last received message
+
     def put(self, key, metadata, value, destnode=None):
         if destnode is None:  # Pick a random node to send the request to
             destnode = random.choice(DynamoNode.nodelist)
