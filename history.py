@@ -5,6 +5,38 @@ import logging
 _logger = logging.getLogger('dynamo')
 
 
+class AsciiGlyphs(object):
+    """Set of glyphs to use in drawing history, in base ASCII"""
+    BLANK = ' '
+    FAILED_NODE = 'x'
+    OK_NODE = '.'
+    VERTICAL_LINE = '|'
+    HORIZONTAL_LINE = '-'
+    MSG_START = 'o'
+    MSG_FORWARD = '+'
+    MSG_NW = '+'
+    MSG_NE = '+'
+    MSG_SW = '+'
+    MSG_SE = '+'
+    MSG_END_LEFT = '<'
+    MSG_END_RIGHT = '>'
+    MSG_FAIL = 'X'
+    COMMENT = '*'
+
+
+class UnicodeGlyphs(AsciiGlyphs):
+    VERTICAL_LINE = u'\u2502'
+    HORIZONTAL_LINE = u'\u2500'
+    MSG_NW = u'\u256f'
+    MSG_NE = u'\u2570'
+    MSG_SW = u'\u256e'
+    MSG_SE = u'\u256d'
+
+
+# Which set of line-drawing glyphs to use.
+GLYPHS = AsciiGlyphs
+
+
 class History(object):
     """
     History of everything that happened in the framework, as a list of (action, object) pairs.
@@ -83,35 +115,35 @@ class History(object):
             action, msg = cls.history[ii]
             lineno = lineno + 1
             # First, build up a line with the current set of vertical lines and leaders
-            this_line = [' ' for jj in xrange(linelen)]
+            this_line = [GLYPHS.BLANK for jj in xrange(linelen)]
             for node, nodecol in column.items():
                 if node in included_nodes:
                     if node in failed_nodes:
-                        this_line[nodecol] = 'x'
+                        this_line[nodecol] = GLYPHS.FAILED_NODE
                     else:
-                        this_line[nodecol] = '.'
+                        this_line[nodecol] = GLYPHS.OK_NODE
                 else:
-                    this_line[nodecol] = ' '
+                    this_line[nodecol] = GLYPHS.BLANK
             for vertcol in vertlines.values():
-                this_line[vertcol] = '|'
+                this_line[vertcol] = GLYPHS.VERTICAL_LINE
 
             # Now look at this particular action
             if action == "send" or action == "forward":
                 if action == "forward":
                     from_node = msg.intermediate_node
-                    start_marker = '+'
+                    start_marker = GLYPHS.MSG_FORWARD
                 else:
                     from_node = msg.from_node
-                    start_marker = 'o'
+                    start_marker = GLYPHS.MSG_START
                 # Pick a suitable spot for the vertical line for this message
                 vertcol = _pick_column(vertlines, column,
                                        column[from_node], column[msg.to_node])
                 vertlines[msg] = vertcol
                 left2right = (column[from_node] < vertcol)
                 if left2right:
-                    end_marker = '+'  # SOUTHWEST
+                    end_marker = GLYPHS.MSG_SW
                 else:
-                    end_marker = '+'  # SOUTHEAST
+                    end_marker = GLYPHS.MSG_SE
 
                 # Draw the horizontal line
                 _draw_horiz(this_line,
@@ -120,11 +152,11 @@ class History(object):
                 # Add the message text
                 msgtext = str(msg)
                 if left2right:  # o----+ Text
-                    _write_text(this_line, vertcol + 1, ' ' + msgtext)
+                    _write_text(this_line, vertcol + 1, GLYPHS.BLANK + msgtext)
                 elif len(msgtext) > vertcol:  # +---o Text
-                    _write_text(this_line, column[from_node] + 1, ' ' + msgtext)
+                    _write_text(this_line, column[from_node] + 1, GLYPHS.BLANK + msgtext)
                 else:  # Text +---o
-                    _write_text(this_line, vertcol - len(msgtext) - 1, msgtext + ' ')
+                    _write_text(this_line, vertcol - len(msgtext) - 1, msgtext + GLYPHS.BLANK)
 
             elif action == "deliver" or action == "drop":
                 # Find the existing vertline that corresponds to this message, and
@@ -134,15 +166,15 @@ class History(object):
 
                 left2right = (vertcol < column[msg.to_node])
                 if left2right:
-                    start_marker = '+'  # NORTHEAST
+                    start_marker = GLYPHS.MSG_NE
                 else:
-                    start_marker = '+'  # NORTHWEST
+                    start_marker = GLYPHS.MSG_NW
                 if action == "drop":
-                    end_marker = 'X'
+                    end_marker = GLYPHS.MSG_FAIL
                 elif left2right:
-                    end_marker = '>'
+                    end_marker = GLYPHS.MSG_END_RIGHT
                 else:
-                    end_marker = '<'
+                    end_marker = GLYPHS.MSG_END_LEFT
 
                 # Draw the horizontal line
                 _draw_horiz(this_line,
@@ -153,7 +185,7 @@ class History(object):
                 # remove it
                 vertcol = vertlines[msg]
                 del vertlines[msg]
-                this_line[vertcol] = 'X'
+                this_line[vertcol] = GLYPHS.MSG_FAIL
 
             elif action == "start":
                 if verbose_timers:
@@ -192,7 +224,7 @@ class History(object):
                 included_nodes.add(msg.from_node)
                 continue  # don't emit a line
             elif action == "announce":
-                indent = "*" * ((linelen - len(msg) - 4) // 2)
+                indent = GLYPHS.COMMENT * ((linelen - len(msg) - 4) // 2)
                 if lineno > start_line:
                     lines.append(' %s %s %s ' % (indent, msg, indent))
                 continue  # line already emitted
@@ -213,7 +245,7 @@ class History(object):
                 longest_conts = len(node_conts)
         # Now typeset it
         for ii in range(longest_conts):
-            this_line = [' ' for jj in xrange(linelen)]
+            this_line = [GLYPHS.BLANK for jj in xrange(linelen)]
             for node, nodecol in column.items():
                 if ii < len(contents[node]):
                     _write_center(this_line, nodecol, str(contents[node][ii]))
@@ -224,7 +256,7 @@ class History(object):
 def _header_line(nodelist, m):
     """Generate header line string with m columns between nodes"""
     header_line = ''
-    spacer = ' ' * m
+    spacer = GLYPHS.BLANK * m
     for node in nodelist:
         if header_line != '':
             header_line = header_line + spacer
@@ -303,14 +335,14 @@ def _draw_horiz(line, from_col, from_char, to_col, to_char):
         left = to_col + 1
         xright = from_col
     for jj in xrange(left, xright):
-        line[jj] = '-'
+        line[jj] = GLYPHS.HORIZONTAL_LINE
 
 
 def _write_text(line, col, text):
     # text may need to extend the array
     extend_by = (col + len(text)) - len(line)
     for ii in xrange(extend_by):
-        line.append(' ')
+        line.append(GLYPHS.BLANK)
     for c in text:
         line[col] = c
         col = col + 1
