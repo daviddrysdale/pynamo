@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 """Test code for Dynamo"""
 import sys
+import codecs
+import locale
 import random
 import unittest
 import logging
+
+# Wrap sys.stdout into a StreamWriter to allow writing unicode.
+sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
 
 from framework import Framework, reset_all
 from node import Node
