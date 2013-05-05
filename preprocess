@@ -122,9 +122,9 @@ for line in fileinput.input():
         p_stdout, p_stderr = proc.communicate()
         if m_res.group('b') == 'b':  # surround with HTML
             print HTML_PRE_START
-        print p_stdout.rstrip(),
+        p_stdout = unicode(p_stdout, 'utf-8')
+        print p_stdout.rstrip().encode('ascii', 'xmlcharrefreplace'),
         if m_res.group('b') == 'b':
             print HTML_PRE_END
     else:
         print line,
-    
