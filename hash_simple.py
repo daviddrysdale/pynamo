@@ -76,19 +76,19 @@ class HashSimpleTestCase(unittest.TestCase):
                          "(0d61f8370cad1d412f80b84d143e1257, C),"
                          "(7fc56270e7a70fa81a5935b72eacbe29, A),"
                          "(9d5ed678fe57bcca610140957afab571, B)")
-        result, avoided = self.c1.find_nodes('splurg', 2);
+        result, avoided = self.c1.find_nodes('splurg', 2)
         self.assertEqual(result, ['A', 'B'])
         self.assertEqual(avoided, [])
 
-        result, avoided = self.c1.find_nodes('splurg', 2, avoid=('A',));
+        result, avoided = self.c1.find_nodes('splurg', 2, avoid=('A',))
         self.assertEqual(result, ['B', 'C'])
         self.assertEqual(avoided, ['A'])
 
-        result, avoided = self.c1.find_nodes('splurg', 2, avoid=('A', 'B'));
+        result, avoided = self.c1.find_nodes('splurg', 2, avoid=('A', 'B'))
         self.assertEqual(result, ['C'])
         self.assertEqual(set(avoided), set(['A', 'B']))
 
-        result, avoided = self.c1.find_nodes('splurg', 2, avoid=('A', 'B', 'C'));
+        result, avoided = self.c1.find_nodes('splurg', 2, avoid=('A', 'B', 'C'))
         self.assertEqual(result, [])
         self.assertEqual(set(avoided), set(['A', 'B', 'C']))
 

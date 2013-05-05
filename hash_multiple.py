@@ -85,19 +85,19 @@ class HashMultipleTestCase(unittest.TestCase):
                          "(2af91581036572478db2b2c90479c73f, B),"
                          "(57e1e221c0a1aa811bc8d4d8dd6deaa7, A),"
                          "(8b872364fb86c3da3f942c6346f01195, C)")
-        result, avoided = self.c1.find_nodes('splurg', 2);
+        result, avoided = self.c1.find_nodes('splurg', 2)
         self.assertEqual(result, ['A', 'C'])
         self.assertEqual(avoided, [])
 
-        result, avoided = self.c1.find_nodes('splurg', 2, avoid=('A',));
+        result, avoided = self.c1.find_nodes('splurg', 2, avoid=('A',))
         self.assertEqual(result, ['C', 'B'])
         self.assertEqual(avoided, ['A'])
 
-        result, avoided = self.c1.find_nodes('splurg', 2, avoid=('A', 'B'));
+        result, avoided = self.c1.find_nodes('splurg', 2, avoid=('A', 'B'))
         self.assertEqual(result, ['C'])
         self.assertEqual(set(avoided), set(['A', 'B']))
 
-        result, avoided = self.c1.find_nodes('splurg', 2, avoid=('A', 'B', 'C'));
+        result, avoided = self.c1.find_nodes('splurg', 2, avoid=('A', 'B', 'C'))
         self.assertEqual(result, [])
         self.assertEqual(set(avoided), set(['A', 'B', 'C']))
 
