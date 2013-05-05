@@ -30,13 +30,14 @@ class SimpleConsistentHashTable(object):
         initial_index = bisect.bisect(self.hashlist, hv)
         next_index = initial_index
         results = []
-        avoided = set()
+        avoided = []
         while len(results) < count:
             if next_index == len(self.nodelist):  # Wrap round to the start
                 next_index = 0
             node = self.nodelist[next_index][1]
             if node in avoid:
-                avoided.add(node)
+                if node not in avoided:
+                    avoided.append(node)
             else:
                 results.append(node)
             next_index = next_index + 1
@@ -75,14 +76,21 @@ class HashSimpleTestCase(unittest.TestCase):
                          "(0d61f8370cad1d412f80b84d143e1257, C),"
                          "(7fc56270e7a70fa81a5935b72eacbe29, A),"
                          "(9d5ed678fe57bcca610140957afab571, B)")
-        self.assertEqual(self.c1.find_nodes('splurg', 2),
-                         (['A', 'B'], set()))
-        self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A',)),
-                         (['B', 'C'], set('A')))
-        self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A', 'B')),
-                         (['C'], set(('A', 'B'))))
-        self.assertEqual(self.c1.find_nodes('splurg', 2, avoid=('A', 'B', 'C')),
-                         ([], set(('A', 'B', 'C'))))
+        result, avoided = self.c1.find_nodes('splurg', 2);
+        self.assertEqual(result, ['A', 'B'])
+        self.assertEqual(avoided, [])
+
+        result, avoided = self.c1.find_nodes('splurg', 2, avoid=('A',));
+        self.assertEqual(result, ['B', 'C'])
+        self.assertEqual(avoided, ['A'])
+
+        result, avoided = self.c1.find_nodes('splurg', 2, avoid=('A', 'B'));
+        self.assertEqual(result, ['C'])
+        self.assertEqual(set(avoided), set(['A', 'B']))
+
+        result, avoided = self.c1.find_nodes('splurg', 2, avoid=('A', 'B', 'C'));
+        self.assertEqual(result, [])
+        self.assertEqual(set(avoided), set(['A', 'B', 'C']))
 
     def testLarge(self):
         x = self.c2.find_nodes('splurg', 15)[0]
