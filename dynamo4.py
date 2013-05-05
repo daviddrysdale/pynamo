@@ -121,7 +121,7 @@ class DynamoNode(Node):
 # PART rcv_clientput
     def rcv_clientput(self, msg):
         preference_list, avoided = DynamoNode.chash.find_nodes(msg.key, DynamoNode.N, self.failed_nodes)
-        # Only hinted-handoff to the nodes that would have got the key in the absence of failures
+        # Only track avoided nodes that would have been part of the original preference list
         avoided = avoided[:DynamoNode.N]
         non_extra_count = DynamoNode.N - len(avoided)
         # Determine if we are in the list
