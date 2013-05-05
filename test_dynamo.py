@@ -13,6 +13,7 @@ sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
 from framework import Framework, reset_all
 from node import Node
 from history import History
+import history
 import logconfig
 
 import dynamomessages
@@ -393,10 +394,15 @@ class SimpleTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    for ii in range(1, len(sys.argv) - 1):  # pragma: no cover
+    ii = 1
+    while ii < len(sys.argv):
         arg = sys.argv[ii]
-        if arg == "-s" or arg == "--seed":
+        if (arg == "-s" or arg == "--seed") and (ii + 1) < len(sys.argv):
             random.seed(sys.argv[ii + 1])
             del sys.argv[ii:ii + 2]
-            break
+        elif arg == "-u" or arg == "--unicode":
+            history.GLYPHS = history.UnicodeGlyphs
+            del sys.argv[ii:ii + 1]
+        else:
+            ii += 1
     unittest.main()
