@@ -11,10 +11,10 @@ ALL_FILES=makefile preprocess pynamo_src.html pygments.css $(ALL_PY_FILES)
 # Coverage; requires coverage module
 COVERAGE=$(shell hash python-coverage 2>&- && echo python-coverage || echo coverage)
 
-all: pynamo.html tar
+all: index.html tar
 
-pynamo.html: preprocess pynamo_src.html $(INCLUDED_PY_FILES) pynamo.tgz
-	preprocess pynamo_src.html > $@
+index.html: preprocess pynamo_src.html $(INCLUDED_PY_FILES) pynamo.tgz
+	./preprocess pynamo_src.html > $@
 
 test:
 	@list='$(TEST_FILES)'; for pyfile in $$list; do \
@@ -37,8 +37,8 @@ tar: pynamo.tgz
 pynamo.tgz: $(ALL_FILES)
 	tar czf $@ $^
 
-clean: 
-	rm -f *.pyc *,cover .coverage* pynamo.log* pynamo.html
+clean:
+	rm -f *.pyc *,cover .coverage* pynamo.log* index.html
 
 lint:
 	pyflakes *.py
